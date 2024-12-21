@@ -150,29 +150,46 @@ services:
     restart: unless-stopped
 
   prometheus:
+    container_name: prometheus
     image: prom/prometheus:latest
     volumes:
-      - ./configs/prometheus.yml:/etc/prometheus.yml
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
     networks:
-      - backend
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.prometheus.rule=Host(`prometheus.localhost`)
+      - traefik.http.routers.prometheus.entrypoints=websecure
+      - traefik.http.routers.prometheus.tls=true
+      - traefik.http.services.prometheus.loadbalancer.server.port=9090
 
   grafana:
+    container_name: grafana
     image: grafana/grafana:latest
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SERVER_ROOT_URL=https://grafana.localhost
+      - GF_SERVER_DOMAIN=grafana.localhost
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
-      - backend
+      - frontend
     labels:
       - traefik.enable=true
       - traefik.http.routers.grafana.rule=Host(`grafana.localhost`)
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
 
   cadvisor:
+    container_name: cadvisor
     image: gcr.io/cadvisor/cadvisor:latest
     volumes:
       - /:/rootfs:ro
@@ -180,7 +197,13 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
     networks:
-      - backend
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cadvisor.rule=Host(`cadvisor.localhost`)
+      - traefik.http.routers.cadvisor.entrypoints=websecure
+      - traefik.http.routers.cadvisor.tls=true
+      - traefik.http.services.cadvisor.loadbalancer.server.port=8080
 
 volumes:
   mariadb:
