@@ -1,0 +1,60 @@
+# Fichiers d'environnement
+.env
+.env.*
+!.env.example
+
+# Certificats SSL et clés
+traefik/certificates/*
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+
+# Dumps de base de données
+dumps/*
+*.sql
+*.dump
+
+# Fichiers de configuration sensibles
+**/config/*
+!**/config/example*
+
+# Logs
+*.log
+logs/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers de mot de passe
+*password*
+*secret*
+!generate_passwords.sh
+
+# Données des conteneurs
+data/
+volumes/
+*.rdb
+
+# IDEs et éditeurs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Cache et fichiers temporaires
+*.cache
+*.tmp
+tmp/
+.sass-cache/
+node_modules/
+
+# Fichiers de build
+dist/
+build/
+*.pyc
+__pycache__/
+*.class
