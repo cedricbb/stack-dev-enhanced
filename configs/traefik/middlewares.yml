@@ -1,0 +1,30 @@
+http:
+  middlewares:
+    pgadmin-headers:
+      headers:
+        customRequestHeaders:
+          X-Script-Name: /
+          X-Scheme: https
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+
+    pgadmin-rate:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    secure-headers:
+      headers:
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        frameDeny: true
+        browserXssFilter: true
+        contentTypeNosniff: true

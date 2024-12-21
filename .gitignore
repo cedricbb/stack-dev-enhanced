@@ -17,8 +17,11 @@ dumps/*
 *.dump
 
 # Fichiers de configuration sensibles
-**/config/*
-!**/config/example*
+# configs/*
+# !configs/*/example*
+# !configs/*/*.example
+# !configs/*/*.dist
+# !configs/*/README.md
 
 # Logs
 *.log
