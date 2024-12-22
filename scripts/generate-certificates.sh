@@ -1,53 +1,67 @@
 #!/bin/bash
 
-# Create directories if they don't exist
-mkdir -p data/certificates
+# Définition des couleurs
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-# Generate root CA
-openssl genrsa -out data/certificates/rootCA.key 4096
-openssl req -x509 -new -nodes -key data/certificates/rootCA.key -sha256 -days 3650 -out data/certificates/rootCA.crt -subj "/C=FR/ST=IDF/L=Paris/O=Dev/CN=Local Dev Root CA"
+# Définition des variables
+CERT_DIR="./traefik/certificates"
+DOMAIN_CNF="./domain.cnf"
 
-# Generate certificate for *.localhost
-openssl genrsa -out data/certificates/localhost.key 2048
-openssl req -new -key data/certificates/localhost.key -out data/certificates/localhost.csr -subj "/C=FR/ST=IDF/L=Paris/O=Dev/CN=*.localhost"
+echo -e "${YELLOW}Démarrage de la création des certificats SSL${NC}"
 
-# Create config file for SAN
-cat > data/certificates/san.cnf << EOF
-[req]
-default_bits = 2048
-prompt = no
-default_md = sha256
-x509_extensions = v3_req
-distinguished_name = dn
+# Création du répertoire pour les certificats
+mkdir -p $CERT_DIR
 
-[dn]
-C = FR
-ST = IDF
-L = Paris
-O = Dev
-CN = *.localhost
+# Nettoyage des anciens certificats
+echo -e "${YELLOW}Nettoyage des anciens certificats${NC}"
+rm -f $CERT_DIR/*.pem $CERT_DIR/*.csr $CERT_DIR/*.crt $CERT_DIR/*.srl
 
-[v3_req]
-subjectAltName = @alt_names
+# Génération de la clé privée CA
+echo -e "${YELLOW}Géneration de la clé privée CA${NC}"
+openssl genrsa -out $CERT_DIR/ca.key.pem 2048
+chmod 400 $CERT_DIR/ca.key.pem
 
-[alt_names]
-DNS.1 = *.localhost
-DNS.2 = localhost
-EOF
+# Génération du certificat CA
+echo -e "${YELLOW}Géneration du certificat CA${NC}"
+openssl req -new -x509 \
+-subj "/C=FR/ST=France/L=Lyon/O=Local Development CA/OU=Development/CN=*.localhost" \
+-extensions v3_ca \
+-days 3650 \
+-key $CERT_DIR/ca.key.pem \
+-sha256 \
+-out $CERT_DIR/ca.pem \
+-config $DOMAIN_CNF
 
-# Sign the certificate
-openssl x509 -req -in data/certificates/localhost.csr \
-    -CA data/certificates/rootCA.crt \
-    -CAkey data/certificates/rootCA.key \
-    -CAcreateserial \
-    -out data/certificates/localhost.crt \
-    -days 3650 \
-    -sha256 \
-    -extfile data/certificates/san.cnf \
-    -extensions v3_req
+# Génération de la clé privée du domaine
+echo -e "${YELLOW}Géneration de la clé privée du domaine${NC}"
+openssl genrsa -out $CERT_DIR/domain.key.pem 2048
 
-# Clean up
-rm data/certificates/localhost.csr data/certificates/san.cnf
+echo -e "${YELLOW}Géneration de la demande de signature du certificat (CSR)${NC}"
+openssl req -new \
+-subj "/C=FR/ST=France/L=Lyon/O=Local Development CA/OU=Development/CN=*.localhost" \
+-key $CERT_DIR/domain.key.pem \
+-out $CERT_DIR/domain.csr \
+-config $DOMAIN_CNF
 
-echo "Certificates generated successfully!"
-echo "Please install data/certificates/rootCA.crt in your browser's trusted root certificates."
+# Signature du certificat de domaine avec le certificat CA
+echo -e "${YELLOW}Signature du certificat de domaine${NC}"
+openssl x509 -req \
+-in $CERT_DIR/domain.csr \
+-CA $CERT_DIR/ca.pem \
+-CAkey $CERT_DIR/ca.key.pem \
+-CAcreateserial \
+-out $CERT_DIR/domain.crt \
+-days 365 \
+-sha256 \
+-extensions v3_req \
+-extfile $DOMAIN_CNF
+
+# Vérfification des permissions sur les fichiers
+echo -e "${YELLOW}Vérification des permissions sur les fichiers${NC}"
+chmod 644 $CERT_DIR/domain.crt
+chmod 644 $CERT_DIR/domain.key.pem
+
+echo -e "${GREEN}Création des certificats SSL terminée${NC}"
+echo -e "${YELLOW}N'oubliez pas d'autoriser le certificat CA (ca.pem) dans votre navigateur pour le domaine ${NC}"

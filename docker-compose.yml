@@ -205,6 +205,55 @@ services:
       - traefik.http.routers.cadvisor.tls=true
       - traefik.http.services.cadvisor.loadbalancer.server.port=8080
 
+  redis-exporter:
+    container_name: redis-exporter
+    image: oliver006/redis_exporter:latest
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.redis-exporter.rule=Host(`redis-exporter.localhost`)
+      - traefik.http.routers.redis-exporter.entrypoints=websecure
+      - traefik.http.routers.redis-exporter.tls=true
+      - traefik.http.services.redis-exporter.loadbalancer.server.port=9121
+
+  postgres-exporter:
+    container_name: postgres-exporter
+    image: prometheuscommunity/postgres-exporter:latest
+    depends_on:
+      - postgres
+    environment:
+      - DATA_SOURCE_NAME=host=postgres user=${POSTGRES_DATABASE_USER} password=${POSTGRES_DATABASE_PASSWORD} dbname=${POSTGRES_DATABASE_NAME} sslmode=disable
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.postgres-exporter.rule=Host(`postgres-exporter.localhost`)
+      - traefik.http.routers.postgres-exporter.entrypoints=websecure
+      - traefik.http.routers.postgres-exporter.tls=true
+      - traefik.http.services.postgres-exporter.loadbalancer.server.port=9187
+
+  mariadb-exporter:
+    container_name: mariadb-exporter
+    image: prom/mysqld-exporter:latest
+    depends_on:
+      - mariadb
+    environment:
+      - DATA_SOURCE_NAME=root:${DATABASE_ROOT_PASSWORD}@tcp(mariadb:3306)/?tls=skip-verify
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.mariadb-exporter.rule=Host(`mariadb-exporter.localhost`)
+      - traefik.http.routers.mariadb-exporter.entrypoints=websecure
+      - traefik.http.routers.mariadb-exporter.tls=true
+      - traefik.http.services.mariadb-exporter.loadbalancer.server.port=9104
+
 volumes:
   mariadb:
     driver: local
