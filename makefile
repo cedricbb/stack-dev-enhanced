@@ -70,7 +70,14 @@ ps:
 	@echo "${_GREEN}Listing stack-dev containers [OK]${_END}"
 
 # Commandes de setup
-init: networks ssl up
+create-dirs:
+	@echo "${_YELLOW}Creating directories...${_END}"
+	@mkdir -p ./certs ./data./dumps ./phpmyadmin
+	@chown -R $(shell id -u):$(shell id -g) ./certs ./data ./dumps ./phpmyadmin
+	@chmod -R 755 ./certs ./data ./dumps ./phpmyadmin
+	@echo "${_GREEN}Directories created [OK]${_END}"
+
+init: create-dirs networks ssl up
 	@echo "${_GREEN}Stack initialisation completed [OK]${_END}"
 
 networks:
@@ -132,6 +139,26 @@ security-check:
 	@docker scan mariadb
 	@docker scan postgres
 	@echo "${_GREEN}${_BOLD}Security check [OK]${_END}"
+
+setup-firewall:
+	@echo "${_YELLOW}${_BOLD}Setting up UFW firewall...${_END}"
+	@sudo ufw default deny incoming
+	@sudo ufw default allow outgoing
+	@sudo ufw allow ssh
+	@sudo allow 51820/udp
+	@sudo ufw allow http
+	@sudo ufw allow https
+	@sudo ufw enable
+	@echo "${_GREEN}${_BOLD}UFW firewall setup [OK]${_END}"
+
+setup-wireguard:
+	@echo "${_YELLOW}${_BOLD}Setting up WireGuard...${_END}"
+	@chmod +x ./scripts/setup-wireguard.sh
+	@./scripts/setup-wireguard.sh
+	@echo "${_GREEN}${_BOLD}WireGuard setup [OK]${_END}"
+
+setup-security: setup-firewall setup-wireguard
+	@echo "${_GREEN}${_BOLD}Security setup completed [OK]${_END}"
 
 # Commandes de développement
 generate-passwords:

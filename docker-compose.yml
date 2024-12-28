@@ -8,14 +8,14 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
-      - MARIADB_ROOT_USER=${DATABASE_USER}
-      - MARIADB_ROOT_PASSWORD=${DATABASE_PASSWORD}
-      - MARIADB_USER=${DATABASE_USER}
-      - MARIADB_PASSWORD=${DATABASE_USER_PASSWORD}
+      - MARIADB_ROOT_USER=${DATABASE_ROOT_USER}
+      - MARIADB_ROOT_PASSWORD=${DATABASE_ROOT_PASSWORD}
       - MARIADB_ROOT_HOST=%
     volumes:
       - mariadb:/var/lib/mysql
       - ./dumps:/dumps
+      - ./configs/mariadb:/etc/prometheus/mariadb:ro
+      - ./scripts:/scripts:ro
     ports:
       - 3306:3306
     labels:
@@ -63,7 +63,6 @@ services:
       - no-new-privileges:true
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_DATABASE_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DATABASE_NAME}
       - POSTGRES_USER=${POSTGRES_DATABASE_USER}
       - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
     volumes:
@@ -238,21 +237,25 @@ services:
       - traefik.http.routers.postgres-exporter.tls=true
       - traefik.http.services.postgres-exporter.loadbalancer.server.port=9187
 
-  mariadb-exporter:
-    container_name: mariadb-exporter
-    image: prom/mysqld-exporter:latest
-    depends_on:
-      - mariadb
-    environment:
-      - DATA_SOURCE_NAME=root:${DATABASE_ROOT_PASSWORD}@tcp(mariadb:3306)/?tls=skip-verify
+  mariadb-metrics:
+    image: bitnami/mysqld-exporter:latest
+    container_name: mariadb-metrics
+    command:
+     - "--mysqld.username=root:secure_password"
+     - "--mysqld.address=127.0.0.1:3306"
+    ports:
+      - "9104:9104"
     networks:
       - frontend
+      - db
+    depends_on:
+      - mariadb
     labels:
       - traefik.enable=true
-      - traefik.http.routers.mariadb-exporter.rule=Host(`mariadb-exporter.localhost`)
-      - traefik.http.routers.mariadb-exporter.entrypoints=websecure
-      - traefik.http.routers.mariadb-exporter.tls=true
-      - traefik.http.services.mariadb-exporter.loadbalancer.server.port=9104
+      - traefik.http.routers.mariadb-metrics.rule=Host(`mariadb-metrics.localhost`)
+      - traefik.http.routers.mariadb-metrics.entrypoints=websecure
+      - traefik.http.routers.mariadb-metrics.tls=true
+      - traefik.http.services.mariadb-metrics.loadbalancer.server.port=9104
 
 volumes:
   mariadb:
