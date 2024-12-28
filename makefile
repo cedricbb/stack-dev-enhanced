@@ -166,3 +166,24 @@ generate-passwords:
 	@chmod +x ./scripts/generate_passwords.sh
 	@./scripts/generate_passwords.sh
 	@echo "${_GREEN}${_BOLD}Passwords generated [OK]${_END}"
+
+# Commandes de tunnel
+setup-cloudflare:
+	@echo "${_YELLOW}${_BOLD}Setting up Cloudflare tunnel...${_END}"
+	@chmod +x ./scripts/setup-cloudflare.sh
+	@./scripts/setup-cloudflare.sh
+	@echo "${_GREEN}${_BOLD}Cloudflare tunnel setup [OK]${_END}"
+
+start-tunnel:
+	@echo "${_YELLOW}${_BOLD}Starting Cloudflare tunnel...${_END}"
+	@sudo systemctl start cloudflared
+	@echo "${_GREEN}${_BOLD}Cloudflare tunnel started [OK]${_END}"
+
+stop-tunnel:
+	@echo "${_YELLOW}${_BOLD}Stopping Cloudflare tunnel...${_END}"
+	@sudo systemctl stop cloudflared
+	@echo "${_GREEN}${_BOLD}Cloudflare tunnel stopped [OK]${_END}"
+
+tunnel-status:
+	@echo "${_YELLOW}${_BOLD}Checking Cloudflare tunnel status...${_END}"
+	@sudo systemctl status cloudflared
