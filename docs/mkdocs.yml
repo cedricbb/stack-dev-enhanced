@@ -1,0 +1,70 @@
+site_name: Stack Dev Documentation
+site_description: Documentation complète de la Stack de Développement
+site_author: Votre Nom
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.annotate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  language: fr
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+plugins:
+  - search
+
+nav:
+  - Accueil: index.md
+  - Guide de Démarrage:
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+  - Services:
+    - Bases de Données:
+      - MariaDB: services/databases/mariadb.md
+      - PostgreSQL: services/databases/postgresql.md
+      - Redis: services/databases/redis.md
+    - Monitoring:
+      - Prometheus: services/monitoring/prometheus.md
+      - Grafana: services/monitoring/grafana.md
+      - cAdvisor: services/monitoring/cadvisor.md
+    - Métriques:
+      - Redis Exporter: services/metrics/redis-exporter.md
+      - Postgres Exporter: services/metrics/postgres-exporter.md
+      - MariaDB Metrics: services/metrics/mariadb-metrics.md
+  - Sécurité:
+    - Accès à distance: security/remote-access.md
+    - Mesures de Sécurité: security/security-measures.md

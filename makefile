@@ -187,3 +187,32 @@ stop-tunnel:
 tunnel-status:
 	@echo "${_YELLOW}${_BOLD}Checking Cloudflare tunnel status...${_END}"
 	@sudo systemctl status cloudflared
+
+# Documentation
+.PHONY: docs-build docs-serve docs-stop
+
+docs-build:
+	@echo "${_YELLOW}${_BOLD}🏗️ Building documentation...${_END}"
+	@docker-compose build docs
+
+docs-serve:
+	@echo "${_YELLOW}${_BOLD}📚 Starting documentation server...${_END}"
+	@docker-compose up -d docs
+
+docs-stop:
+	@echo "${_YELLOW}${_BOLD}🛑 Stopping documentation server...${_END}"
+	@docker-compose stop docs
+
+docs-init:
+	@echo "${_YELLOW}${_BOLD}📝 Initializing documentation structure...${_END}"
+	mkdir -p ./docs/docs
+	chown -R $(shell id -u):$(shell id -g) ./docs
+	chmod -R 755 ./docs
+	@echo "${_GREEN}${_BOLD}Documentation initialized [OK]${_END}"
+
+update-hosts:
+	@echo "${_YELLOW}${_BOLD}Updating /etc/hosts...${_END}"
+	@if ! grep -q "docs.localhost" /etc/hosts; then \
+		echo "127.0.0.1 docs.localhost" | sudo tee -a /etc/hosts; \
+	fi
+	@echo "${_GREEN}${_BOLD}/etc/hosts updated [OK]${_END}"
