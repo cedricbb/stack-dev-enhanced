@@ -78,9 +78,35 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --save 900 1
+      --save 300 10
+      --save 60 10000
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - frontend
+      - backend
+    deploy:
+      ressources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
     security_opt:
       - no-new-privileges:true
     labels:
@@ -88,8 +114,146 @@ services:
     restart: always
     ports:
       - 6379:6379
+
+  varnish:
+    image: varnish:7.2
+    container_name: varnish
+    volumes:
+      - ./config/varnish/default.vcl:/etc/varnish/default.vcl:ro
+    environment:
+      - VARNISH_SIZE=2G
+    command: -p default_ttl=3600 -p default_grace=3600
+    depends_on:
+      - traefik
     networks:
-      - db
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "varnishstat", "-1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.varnish.rule=Host(`cache.localhost`)
+      - traefik.http.services.varnish.loadbalancer.server.port=80
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - frontend
+      - backend
+    labels:
+    - traefik.enable=true
+    - traefik.http.routers.mailhog.rule=Host(`mailhog.localhost`)
+    - treafik.http.services.mailhog.loadbalancer.server.port=8025
+    - traefik.http.routers.mailhog.middlewares=secure-headers@file
+  deploy:
+    resources:
+      limits:
+        cpus: "0.5"
+        memory: 512M
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.2
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - backend
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+    healthcheck:
+    test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+  
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.8.2
+    container_name: logstash
+    volumes:
+      - ./config/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+      - ./config/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      - xpack.monioring.enable=true
+    depends_on:
+      - elasticsearch
+    networks:
+      - backend
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+  
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.2
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+    depends_on:
+      - elasticsearch
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.kibana.rule=Host(`logs.localhost`)
+      - traefik.http.services.kibana.loadbalancer.server.port=5601
+    deploy:
+    resources:
+      limits:
+        cpus: "0.5"
+        memory: 1G
+  
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - frontend
+      - backend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.minio.rule=Host(`minio.localhost`)
+      - traefik.http.services.minio.loadbalancer.server.port=9000
+      - traefik.http.routers.minio-console.rule=Host(`s3-console.localhost`)
+      - traefik.http.services.minio-console.loadbalancer.server.port=9001
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
 
   pgadmin:
     container_name: pgadmin
@@ -148,61 +312,63 @@ services:
       - mariadb
     restart: unless-stopped
 
-  prometheus:
-    container_name: prometheus
-    image: prom/prometheus:latest
-    volumes:
-      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --web.enable-lifecycle
-    networks:
-      - frontend
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.prometheus.rule=Host(`prometheus.localhost`)
-      - traefik.http.routers.prometheus.entrypoints=websecure
-      - traefik.http.routers.prometheus.tls=true
-      - traefik.http.services.prometheus.loadbalancer.server.port=9090
-
-  grafana:
-    container_name: grafana
-    image: grafana/grafana:latest
+  code-server:
+    image: codercom/code-server:latest
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SERVER_ROOT_URL=https://grafana.localhost
-      - GF_SERVER_DOMAIN=grafana.localhost
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      -VIRTUAL_HOST=ide.internal
+      - VIRTUAL_PORT=8080
     volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - frontend
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.grafana.rule=Host(`grafana.localhost`)
-      - traefik.http.routers.grafana.entrypoints=websecure
-      - traefik.http.routers.grafana.tls=true
-      - traefik.http.services.grafana.loadbalancer.server.port=3000
+      - ./workspace:/home/coder/workspace
 
-  cadvisor:
-    container_name: cadvisor
-    image: gcr.io/cadvisor/cadvisor:latest
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
     volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
     networks:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.cadvisor.rule=Host(`cadvisor.localhost`)
-      - traefik.http.routers.cadvisor.entrypoints=websecure
-      - traefik.http.routers.cadvisor.tls=true
-      - traefik.http.services.cadvisor.loadbalancer.server.port=8080
+      - traefik.http.routers.portainer.rule=Host(`portainer.localhost`)
+      - traefik.http.routers.portainer.entrypoints=websecure
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+      - traefik.http.routers.portainer.middlewares=secure-headers@file
+    restart: unless-stopped
+
+  netdata:
+    container_name: netdata
+    image: netdata/netdata:latest
+    pid: host
+    network_mode: host
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+    - netdataconfig:/etc/netdata
+    - netdatalib:/var/lib/netdata
+    - netdatacache:/var/cache/netdata
+    - /etc/passwd:/host/etc/passwd:ro
+    - /etc/group:/host/etc/group:ro
+    - /proc:/host/proc:ro
+    - /sys:/host/sys:ro
+    - /etc/os-release:/host/etc/os-release:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+  environment:
+    - NETDATA_CLAIM_URL=https://app.netdata.cloud
+    - NETDATA_CLAIM_TOKEN=${NETDATA_CLAIM_TOKEN}
+  labels:
+    - traefik.enable=true
+    - traefik.http.routers.netdata.rule=Host(`netdata.localhost`)
+    - traefik.http.routers.netdata.entrypoints=websecure
+    - traefik.http.routers.netdata.tls=true
+    - traefik.http.services.netdata.loadbalancer.server.port=19999
+    - traefik.http.routers.netdata.middlewares=secure-headers@file
 
   redis-exporter:
     container_name: redis-exporter
@@ -289,9 +455,13 @@ volumes:
     driver: local
   pgadmin:
     driver: local
-  prometheus_data:
+  portainer_data:
     driver: local
-  grafana_data:
+  netdataconfig:
+    driver: local
+  netdatalib:
+    driver: local
+  netdatacache:
     driver: local
 
 networks:

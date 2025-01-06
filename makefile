@@ -111,7 +111,7 @@ restore:
 	@docker-compose exec -T postgres psql -U postgres ${POSTGRES_DATABASE_NAME} < ./dumps/$(BACKUP_DATE)/postgres_backup.sql
 	@echo "${_GREEN}Databases restored [OK]${_END}"
 
-# COmmandes de maintenance
+# Commandes de maintenance
 clean:
 	@echo "${_YELLOW}Cleaning unused Docker Ressources...${_END}"
 	@docker system prune --volumes -f
@@ -216,3 +216,37 @@ update-hosts:
 		echo "127.0.0.1 docs.localhost" | sudo tee -a /etc/hosts; \
 	fi
 	@echo "${_GREEN}${_BOLD}/etc/hosts updated [OK]${_END}"
+
+# Monitoring
+monitoring-start:
+	@echo "${_YELLOW}${_BOLD}Starting monitoring...${_END}"
+	@docker-compose up -d portainer netdata
+	@echo "${_GREEN}${_BOLD}Monitoring started [OK]${_END}"
+
+monitoring-stop:
+	@echo "${_YELLOW}${_BOLD}Stopping monitoring...${_END}"
+	@docker-compose stop portainer netdata
+	@echo "${_GREEN}${_BOLD}Monitoring stopped [OK]${_END}"
+
+monitoring-logs:
+	@echo "${_YELLOW}${_BOLD}Showing monitoring logs...${_END}"
+	@docker-compose logs -f portainer netdata
+
+monitoring-status:
+	@echo "${_YELLOW}${_BOLD}Checking monitoring status...${_END}"
+	@docker-compose ps portainer netdata
+
+portainer-password:
+	@read -p "Enter a new Portainer password: " pwd; \
+	docker-compose exec portainer curl -X POPST -H "Content-Type: application/json" \
+	-d "{\"username\":\"admin\",\"password\":\"$$pwd\"}" \
+	http://localhost:9000/api/users/admin/init
+
+netdata-claim:
+	@read -p "Netdata Claim Token: " token; \
+	docker-compose exec netdata \
+	netdata-claim.sh -token=$$token \
+	-rooms=default \
+	-url=https://app.netdata.cloud
+
+monitoring-backup:
