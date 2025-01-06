@@ -86,7 +86,7 @@ postgres-exporter:
 - État des réplications
 - Statistiques des tables/index
 
-## Tableaux de Bord Grafana
+### Tableaux de Bord Grafana
 
 Des tableaux de bord préconfigurés pour :
 - Surveillance des performances
@@ -126,3 +126,79 @@ Tâches recommandées :
 2. Vérification des logs quotidienne
 3. Test de restauration trimestriel
 4. Mise à jour des statistiques
+5. Encryption des données sensibles
+
+## Résolution des Problèmes
+
+### Problèmes Courants
+
+1. Echec de connexion
+```bash
+# Vérification des logs
+docker-compose logs postgres
+
+# Test de connexion
+docker exec postgres pg_isready -U postgres
+```
+
+2. Performances dégradées
+```bash
+# Analyse des processus
+docker exec -it postgres psql -U postgres -c "SELECT * FROM pg_stat_activity;"
+
+# Requêtes lentes
+docker exec -it postgres psql -U postgres -c "SELECT * FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;"
+```
+
+3. Problèmes de sauvegarde
+```bash
+# Vérification de l'espace
+docker exec postgres df -h
+
+# Test de sauvegarde
+docker exec postgres pg_dumpall --version
+```
+
+### Commandes Utiles
+
+```bash
+# Connexion psql
+docker exec -it postgres psql -U postgres
+
+# Import de base
+docker exec -i postgres psql -U postgres -d database_name < dump.sql
+
+# Export de base
+docker exec postgres pg_dump -U postgres database_name > dump.sql
+
+# Création d'utilisateur
+docker exec -it postgres psql -U postgres -c "CREATE USER user_name WITH PASSWORD 'password';"
+
+# Attribution des droits
+docker exec -it postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE database_name TO user_name;"
+
+# Statistiques des tables
+docker exec -it postgres psql -U postgres -c "SELECT schemaname, tablename, n_live_tup, n_dead_tup FROM pg_stat_user_tables ORDER BY n_dead_tup DESC;"
+```
+
+### Scripts Utiles
+
+```bash
+# Surveillance des connexions actives
+docker exec -it postgres psql -U postgres -c "
+SELECT datname, usename, client_addr, state, query 
+FROM pg_stat_activity 
+WHERE state != 'idle';"
+
+# Taille des bases de données
+docker exec -it postgres psql -U postgres -c "
+SELECT pg_database.datname, pg_size_pretty(pg_database_size(pg_database.datname)) AS size 
+FROM pg_database;"
+
+# Index inutilisés
+docker exec -it postgres psql -U postgres -c "
+SELECT schemaname, tablename, indexname, idx_scan 
+FROM pg_stat_user_indexes 
+WHERE idx_scan = 0 
+AND tablename NOT LIKE 'pg_%';"
+```

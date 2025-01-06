@@ -100,7 +100,7 @@ mariadb-metrics:
 - Performance des requêtes
 - État des réplications
 
-## Tableaux de Bord Grafana
+### Tableaux de Bord Grafana
 
 Des tableaux de bord préconfigurés sont disponibles dans Grafana pour visualiser :
 - Performance globale
