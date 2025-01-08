@@ -1,196 +1,168 @@
 # Guide de Configuration
 
-Ce guide détaille la configuration des différents services de la stack de développement.
+## 1. Structure des fichiers
 
-## 1. Configuration des services
-
-### 1.1 Sécurité
-
-#### 1.1.1 Gestion des Mots de Passe
-
-Les mots de passe sont gérés via le fichier `.env`. Pour régénérer des mots de passe sécurisés :
-
-```bash
-make generate-passwords
+```plaintext
+.
+├── config/           # Configurations des services
+├── secrets/          # Secrets Docker
+├── scripts/          # Scripts d'administration
+├── docs/            # Documentation
+└── docker-compose.yml
 ```
 
-Le script `scripts/generate-passwords.sh` génère automatiquement :
-- Identifiants root MariaDB
-- Identifiants PostgreSQL
-- Identifiants PGAdmin
-- Mot de passe Redis
-- Mot de passe Grafana
-- Identifiants du dashboard Traefik
+## 2. Configuration des Services
 
-#### 1.1.2 Certificats SSL
+### 2.1 Traefik
+```yaml
+# config/traefik/traefik.yml
+api:
+  dashboard: true
+  insecure: false
 
-Les certificats SSL sont gérés dans le dossier `traefik/certificates`. Pour les renouveler :
+# Optimisations B1 Pro
+log:
+  level: INFO
+  bufferingSize: 100
 
-```bash
-make ssl-renew
+# Configuration mémoire
+accessLog:
+  bufferingSize: 100
+pilot:
+  dashboard: false
 ```
 
-### 1.2. Bases de données
+### 2.2 MariaDB
+```cnf
+# config/mariadb/my.cnf
+[mysqld]
+# Optimisations B1 Pro
+performance_schema = OFF
+table_definition_cache = 400
+innodb_buffer_pool_size = 256M
+max_connections = 50
+```
 
-#### 1.2.1 MariaDB
+### 2.3 Redis
+```conf
+# config/redis/redis.conf
+maxmemory 256mb
+maxmemory-policy allkeys-lru
+appendonly yes
+```
 
-Configuration dans `config/mariadb/` :
-- Charset et Collation
-- Paramètres de performances
-- Configuration des métriques
+### 2.4 Adminer
+```yaml
+services:
+  adminer:
+    environment:
+      - ADMINER_DEFAULT_SERVER=mariadb
+      - ADMINER_DESIGN=dracula
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+```
+- Accès : https://adminer.votredomaine.fr
+- Identifiants : utiliser les credentials MariaDB
 
-#### 1.2.2 PostgreSQL
+## 3. Gestion des Secrets
 
-Paramètres principaux :
+### 3.1 Création
+```bash
+# Génération des secrets
+make generate-secrets
+```
+
+### 3.2 Utilisation
+```yaml
+# docker-compose.yml
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+```
+
+## 4. Configuration des ressources
+
+### 4.1 Limites par service
+```yaml
+# docker-compose.yml
+services:
+  mariadb:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          memory: 256M
+```
+
+### 4.2 Priorités
+- Base de données : 512MB RAM
+- Cache : 256MB RAM
+- Proxy : 256MB RAM
+- Monitoring : 256MB RAM
+
+## 5. Configuration Réseau
+
+### 5.1 Réseaux Docker
+```yaml
+networks:
+  frontend:
+    name: frontend
+  backend:
+    name: backend
+  db:
+    name: db
+```
+
+### 5.2 Ports exposés
+- 80 : HTTP
+- 443 : HTTPS
+- 51820 : WireGuard
+
+## 6. Configuration SSL/TLS
+
+### 6.1 Let's Encrypt
+```yaml
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: your@email.com
+      storage: /letsencrypt/acme.json
+      tlsChallenge: true
+```
+
+### 6.2 Headers de sécurité
+```yaml
+headers:
+  sslRedirect: true
+  forceSTSHeader: true
+  stsIncludeSubdomains: true
+  stsPreload: true
+  stsSeconds: 31536000
+```
+
+## 7. Variables d'environnement
+
+### 7.1 Configuration minimale (.env)
 ```env
-POSTGRES_DATABASE_USER=postgres
-POSTGRES_DATABASE_PASSWORD=votre-mot-de-passe
-POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+DOMAIN_NAME=votredomaine.fr
+ACME_EMAIL=votre@email.com
 ```
 
-#### 1.2.3 Redis
+## 8. Personnalisation
 
-Configuration via les variables d'environnement :
-```env
-REDIS_PASSWORD=votre-mot-de-passe
-```
+### 8.1 Ajout de services
+1. Créer la configuration dans `config/`
+2. Ajouter le service dans `docker-compose.yml`
+3. Configurer les labels Traefik
+4. Mettre à jour la documentation
 
-### 1.3. Monitoring
-
-#### 1.3.1 Prometheus
-
-Le fichier `config/prometheus/prometheus.yml` définit :
-- Les cibles de scraping
-- Les intervalles de collecte
-- Les règles d'alertes
-
-#### 1.3.2 Grafana
-
-Principaux paramètres :
-```env
-GF_SERVER_ROOT_URL=http://grafana.localhost
-GF_SECURITY_ADMIN_PASSWORD=votre-mot-de-passe
-GF_SECURITY_ADMIN_USER=admin
-```
-
-### 1.4. Exporters de Métriques
-
-#### 1.4.1 MariaDB Metrics
-
-Le script `scripts/mariadb_metrics.sh` confgure :
-- La collecte des métriques MariaDB
-- L'exposition sur le port 9104
-- Les métriques personnalisées
-
-#### 1.4.2 Redis et Postgres Exporters
-
-Configuration automatique via docker-compose :
-- Redis Exporter : Port 9121
-- Postgres Exporter : Port 9187
-
-## 2. Sauvegardes
-
-### 2.1 Configuration des Sauvegardes
-
-Le script `scripts/backup.sh` gère :
-- Sauvegarde complète MariaDB
-- Sauvegarde complète PostgreSQL
-- Compression des backups
-- Rotation automatique (7 jours par défaut)
-
-Pour exécuter une sauvegarde manuelle :
-
-```bash
-make backup
-```
-
-Configuration de la rotation des sauvegardes dans `backup.sh` :
-```bash
-KEEP_DAYS=7 # Nombre de jours de rétention
-```
-
-## 3. Monitoring de Santé
-
-### 3.1 Health Checks
-
-Le script `scripts/health_checks.sh` surveille :
-- L'état des conteneurs
-- L'accéssibiité des services web
-- La connectivité des bases de données
-
-Configuration des alertes :
-```bash
-# Dans votre environnement
-export SLACK_WEBHOOK_URL="votre-url-de-webhook-slack"
-export ALERT_EMAIL="votre-adresse-email"
-```
-
-## 4. Configuration de l'Accès à Distance
-
-### 4.1 Wireguard
-
-Configuration dans `/etc/wireguard/wg0.conf` :
-- Port d'écoute : 51820
-- Plage d'adresses : 10.0.0.0/24
-- Règles de forwarding
-
-### 4.2 Cloudflare Tunnel
-
-Configuration dans `~/.cloudflared/config.yml` :
-- Routes des services
-- Règles de sécurité
-- Configuration TLS
-
-## 5. Maintenance
-
-### 5.1 Commandes Make Disponibles
-
-```bash
-make up                 # Démarrer la stack
-make down               # Arretter la stack
-make restart            # Redémarrer la stack
-make ps                 # Status des services
-make logs               # Logs des services
-make backup             # Sauvegarder les données
-make restore            # Restaurer les données
-make clean              # Nettoyer les ressources inutiles
-make update             # Mettre à jour la stack
-make security-check     # Verifier la sécurité
-```
-
-### 5.2 Logs et Monitoring
-
-Accès aux logs :
-```bash
-# Tous les services
-make logs
-
-# Service spécifique
-make logs [service_name]
-```
-
-### 5.3 Mise à jour
-
-Pour mettre à jour la stack :
-
-```bash
-git pull
-make update
-```
-
-## 6. Personnalisation
-
-### 6.1 Ajout de Services
-
-1. Créez un nouveau service dans `docker-compose.yml`
-2. Ajoutez la configuration dans `configs/`
-3. Mettez à jour les middlewares Traefik si nécessaire
-4. Ajoutez les entrées DNS locales
-
-### 6.2 Configuration Avancée
-
-Pour des besoins spécifiques :
-
-1. Modifiez les fichiers de configuration dans `configs/`
-2. Ajustez les variables d'environnement dans `.env`
-3. Mettez à jour les scripts de maintenance si nécessaire
+### 8.2 Modification des ressources
+1. Adapter les limites dans `docker-compose.yml`
+2. Mettre à jour la configuration service
+3. Tester les performances
+4. Documenter les changements

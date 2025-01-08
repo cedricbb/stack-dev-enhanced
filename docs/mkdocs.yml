@@ -1,5 +1,5 @@
-site_name: Stack Dev Documentation
-site_description: Documentation complète de la Stack de Développement
+site_name: Documentation Stack Dev B1 Pro
+site_description: Documentation de la stack de développement optimisée pour B1 Pro
 site_author: Votre Nom
 
 theme:
@@ -21,15 +21,14 @@ theme:
       accent: indigo
       toggle:
         icon: material/brightness-7
-        name: Switch to dark mode
+        name: Mode sombre
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-4
-        name: Switch to light mode
-  language: fr
+        name: Mode clair
 
 markdown_extensions:
   - admonition
@@ -43,9 +42,17 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
 
 plugins:
   - search
+  - git-revision-date
+  - minify:
+      minify_html: true
 
 nav:
   - Accueil: index.md
@@ -53,18 +60,36 @@ nav:
     - Installation: getting-started/installation.md
     - Configuration: getting-started/configuration.md
   - Services:
-    - Bases de Données:
+    - Bases de données:
       - MariaDB: services/databases/mariadb.md
-      - PostgreSQL: services/databases/postgresql.md
       - Redis: services/databases/redis.md
+      - Adminer: services/databases/adminer.md
     - Monitoring:
-      - Prometheus: services/monitoring/prometheus.md
-      - Grafana: services/monitoring/grafana.md
-      - cAdvisor: services/monitoring/cadvisor.md
-    - Métriques:
-      - Redis Exporter: services/metrics/redis-exporter.md
-      - Postgres Exporter: services/metrics/postgres-exporter.md
-      - MariaDB Metrics: services/metrics/mariadb-metrics.md
+      - Portainer: services/monitoring/portainer.md
+      - Netdata: services/monitoring/netdata.md
+    - Proxy:
+      - Traefik: services/proxy/traefik.md
   - Sécurité:
-    - Accès à distance: security/remote-access.md
+    - Accès à Distance: security/remote-access.md
     - Mesures de Sécurité: security/security-measures.md
+  - Administration:
+    - Gestion: admin/management.md
+    - Maintenance: admin/maintenance.md
+  - Développement:
+    - Bonnes Pratiques: development/best-practices.md
+    - Performance: development/performance.md
+  - Troubleshooting:
+    - Problèmes Courants: troubleshooting/common-issues.md
+    - Performances: troubleshooting/performance.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/votre-username/stack-dev
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/votre-username/stack-dev
+
+extra_css:
+  - stylesheets/extra.css
+
+copyright: Copyright &copy; 2024 Votre Nom

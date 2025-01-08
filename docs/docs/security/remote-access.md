@@ -1,43 +1,27 @@
-# Accès à Ditance Sécurisé
+# Accès à Distance
 
-Ce guide détaille la configuration de l'accès à distance sécurisé pour la stack de développement, en utilisant Wireguard pour le VPN et Cloudflare Tunnel pour l'exposition des services.
+## 1. Configuration WireGuard
 
-## 1. Configuration Wireguard
-
-### 1.1 Installation
-
+### 1.1 Installation du serveur
 ```bash
-sudo ./scripts/setup-wireguard.sh
+# Installation et configuration
+make setup-wireguard
 ```
 
-Ce script automatise :
-- L'installation des paquets nécessaires
-- La génération des clés
-- La configuration du serveur
-- L'activation du service
-
-### 1.2 Configuration du Serveur
-
-Le fichier `/etc/wireguard/wg0.conf` est automatiquement généré avec :
-
-```bash
+### 1.2 Configuration serveur
+```ini
+# /etc/wireguard/wg0.conf
 [Interface]
 PrivateKey = <SERVER_PRIVATE_KEY>
 Address = 10.0.0.1/24
 ListenPort = 51820
 PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-
-[Peer]
-PublicKey = <CLIENT_PUBLIC_KEY>
-AllowedIps = 10.0.0.2/32
 ```
 
-### 1.3 Configuration du Client
-
-Un fichier de configuration client est généré dans `/etc/wireguard/client.conf` :
-
-```bash
+### 1.3 Client
+```ini
+# /etc/wireguard/client.conf
 [Interface]
 PrivateKey = <CLIENT_PRIVATE_KEY>
 Address = 10.0.0.2/24
@@ -45,181 +29,145 @@ DNS = 1.1.1.1
 
 [Peer]
 PublicKey = <SERVER_PUBLIC_KEY>
-Endpoint = <SERVER_PUBLIC_IP>:51820
-AllowedIps = 0.0.0.0/0
+Endpoint = votre-ip:51820
+AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 ```
 
-### 1.4 Activation et Gestion
+## 2. Configuration Pare-feu
 
+### 2.1 UFW
 ```bash
-# Démarrage du service Wireguard
-sudo systemctl start wg-quick@wg0
+# Installation et configuration
+make setup-firewall
+```
 
-# Activation au démarrage
-sudo systemctl enable wg-quick@wg0
+### 2.2 Règles
+```bash
+# Ports autorisés
+ufw allow ssh
+ufw allow http
+ufw allow https
+ufw allow 51820/udp  # WireGuard
 
-# Vérification du statut
+# Services internes via VPN uniquement
+ufw allow from 10.0.0.0/8 to any port 3306  # MariaDB
+ufw allow from 10.0.0.0/8 to any port 6379  # Redis
+```
+
+## 3. Configuration Fail2ban
+
+### 3.1 Installation
+```bash
+# Installation et configuration
+make setup-fail2ban
+```
+
+### 3.2 Configuration
+```ini
+# /etc/fail2ban/jail.local
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 3
+
+[traefik-auth]
+enabled = true
+port = 80,443
+maxretry = 5
+```
+
+## 4. DNS et Domaine
+
+### 4.1 Configuration DNS
+```text
+Type    Nom    Valeur
+A       @      <VOTRE_IP>
+CNAME   *      @
+```
+
+### 4.2 Sous-domaines
+- traefik.votredomaine.fr
+- portainer.votredomaine.fr
+- docs.votredomaine.fr
+
+## 5. SSL/TLS
+
+### 5.1 Let's Encrypt
+Configuration automatique via Traefik :
+- Renouvellement automatique
+- Challenge TLS
+- Certificats wildcard
+
+### 5.2 Sécurité
+```yaml
+# Traefik headers
+headers:
+  sslRedirect: true
+  forceSTSHeader: true
+  stsSeconds: 31536000
+  stsIncludeSubdomains: true
+```
+
+## 6. Monitoring à Distance
+
+### 6.1 Accès aux services
+- Portainer : https://portainer.votredomaine.fr
+- Netdata : https://netdata.votredomaine.fr
+
+### 6.2 Sécurité
+- Accès uniquement via VPN
+- Authentification requise
+- Rate limiting activé
+
+## 7. Maintenance à Distance
+
+### 7.1 Commandes disponibles
+```bash
+# Status des services
+make status
+
+# Logs
+make logs
+
+# Santé
+make check-health
+```
+
+### 7.2 Sécurité
+- Session SSH limitées
+- Clés SSH uniquement
+- Fail2ban actif
+
+## 8. Résolution des Problèmes
+
+### 8.1 VPN
+```bash
+# Vérification WireGuard
+sudo wg show
 sudo systemctl status wg-quick@wg0
 
-# Vérification de la connexion
-sudo wg show
-```
-
-## 2. Configuration de Cloudflare Tunnel
-
-### 2.1 Installation
-
-```bash
-sudo ./scripts/setup-cloudflare.sh
-```
-
-Le script :
-- Installe Cloudflared
-- Configure le depot Cloudflare
-- Prépare l'environnement de configuration
-
-### 2.2 Configuration
-
-1. Authentification :
-```bash
-cloudflared login
-```
-2. Création du tunnel :
-```bash
-cloudflared tunnel create stack-dev
-```
-3. Configuration du tunnel (~/.cloudflared/config.yml):
-```bash
-tunnel : <TUNNEL_ID>
-credentials-file : /root/cloudflared/<TUNNEL_ID>.json
-
-ingress:
-    # Traefik Dashboard
-    - hostname: traefik.votre-domaine.com
-    service: http://localhost:8080
-    originRequest:
-        noTLSVerify: true
-    
-    # Bases de données
-    - hostname: mariadb.votre-domaine.com
-    service: http://localhost:3306
-    - hostname: postgres.votre-domaine.com
-    service: http://localhost:5432
-    - hostname: redis.votre-domaine.com
-    service: http://localhost:6379
-
-    # Interfaces d'administration
-    - hostname: pgadmin.votre-domaine.com
-    service: http://localhost:5050
-    - hostname: phpmyadmin.votre-domaine.com
-    service: http://localhost:80
-    - hostname: grafana.votre-domaine.com
-    service: http://localhost:3000
-
-    # Route par defaut
-    - service: http_status:404
-```
-
-### 2.3 DNS et Routage
-
-Configuration des routes DNS pour chaque service:
-```bash
-cloudflared tunnel route dns <TUNNEL_ID> <SOUS_DOMAINE>
-```
-
-### 2.4 Service et Démarrage
-
-```bash
-# Installation du service
-sudo cloudflared service install
-
-# Démarrage
-sudo systemctl start cloudflared
-sudo systemctl enable cloudflared
-```
-
-## 3. Maintenance et Surveillance
-
-### 3.1 Commandes Wireguard
-
-```bash
-# Status de la connexion
-sudo wg show
-
-# Redémarrage
-sudo systemctl restart wg-quick@wg0
-
-# logs
+# Logs
 sudo journalctl -u wg-quick@wg0
 ```
 
-### 3.2 Commandes Cloudflare
-
+### 8.2 Connexion
 ```bash
-# liste des tunnels
-cloudflared tunnel list
+# Status Fail2ban
+sudo fail2ban-client status
 
-# Status du service
-sudo systemctl status cloudflared
-
-# logs
-sudo journalctl -u cloudflared -f
-
-# Test des connexions
-curl -v http://votre-domaine.com
+# Déblocage IP
+sudo fail2ban-client set traefik-auth unbanip <IP>
 ```
 
-## 4. Résolution des Problemes
+## 9. Bonnes Pratiques
 
-### 4.1 Wireguard
+### 9.1 Sécurité
+- Changer régulièrement les clés VPN
+- Surveiller les logs d'accès
+- Maintenir les règles de pare-feu à jour
 
-1. Problème de connexion :
-```bash
-# Vérification du forwarding IP
-sudo cat /proc/sys/net/ipv4/ip_forward
-
-# Vérification des règles iptables
-sudo iptables -L -n -v
-```
-
-2. Problème de routage :
-```bash
-# Vérification de la configuration
-sudo wg show
-sudo journalctl -u wg-quick@wg0
-```
-
-### 4.2 Cloudflare Tunnel
-
-1. Tunnel non connecté :
-```bash
-# Vérification détaillée
-sudo systemctl status cloudflared
-sudo journalctl -u cloudflared --since "5 minutes ago"
-```
-
-2. Problème DNS :
-```bash
-# Vérification des routes
-cloudflared tunnel route list
-
-# Tester la résolution DNS
-dig +short votre-domaine.com
-```
-
-## 5. Sécurité
-
-### 5.1 Bonnes pratiques Wireguard
-
-- Utilisez des clés uniques pour chaque client
-- Limitez les AllowedIPs aux réseaux nécessaires
-- Activez le PersistentKeppAlive pour les conneions stables
-- Mettez à jour régulièrement le système et Wireguard
-
-### 5.2 Bonnes pratiques Cloudflare
-
-- Activez l'authentification à deux facteurs
-- Utilisez des tkens d'accès limités
-- Surveillez les logs d'accès
-- Configuez les règles WAF appropriées
+### 9.2 Performance
+- Limiter le nombre de connexions simultanées
+- Monitorer la bande passante
+- Optimiser les configurations réseau

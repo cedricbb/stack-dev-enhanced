@@ -1,246 +1,223 @@
 # Redis
 
-## Vue d'ensemble
+## 1. Configuration Optimisée B1 Pro
 
-Redis 7 est configuré comme un système de cache et de stockage de données en mémoire, avec persistance activée et monitoring intégré.
-
-## Configuration
-
-### Configuration Docker
-
+### 1.1 Configuration Docker
 ```yaml
-postgres:
-  container_name: redis
-  restart: always
-  image: redis:7-alpine
-  commands: redis-server --requirepass ${REDIS_PASSWORD}
-  security_opt:
-    - no-new-privileges:true
-  environment:
-    - REDIS_PASSWORD=${REDIS_PASSWORD}
-  labels:
-    - traefik.enable=false
-  ports:
-    - 6379:6379
-  networks:
-    - db
+# docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+        reservations:
+          memory: 64M
 ```
 
-### Variables d'Environnement
-
-Dans votre fichier `.env` :
-```bash
-REDIS_PASSWORD=votre_mot_de_passe_secure
-```
-
-## Métriques et Monitoring
-
-### Configuration Redis Exporter
-
-```yaml
-redis-exporter:
-  container_name: redis-exporter
-  image: oliver006/redis_exporter:latest
-  depends_on:
-    - redis
-  environment:
-    - REDIS_ADDR=redis:6379
-    - REDIS_PASSWORD=${REDIS_PASSWORD}
-  networks:
-    - frontend
-  labels:
-    - traefik.enable=true
-    - traefik.http.services.redis-exporter.loadbalancer.server.port=9121
-```
-
-### Métriques Disponibles
-
-- Utilisation de la mémoire
-- Connexions clients
-- Opérations par seconde
-- Taux de succès du cache
-- Latence des commandes
-
-### Tableaux de Bord Grafana
-
-Des tableaux de bord préconfigurés pour :
-- Performance globale
-- Utilisation de la mémoire
-- Statistiques des opérations
-- État de la persistance
-
-## Maintenance
-
-### Vérification de l'État
-
-```bash
-# Status du service
-docker-compose ps redis
-
-# Logs du service
-docker-compose logs -f redis
-
-# Informations Redis
-docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO
-```
-
-### Nettoyage et Optimisation
-
-```bash
-# Nettoyage manuel des clés expirées
-docker exec redis redis-cli -a ${REDIS_PASSWORD} FLUSHEXPIRED
-
-# Analyse de la mémoire
-docker exec redis redis-cli -a ${REDIS_PASSWORD} MEMORY STATS
-
-# Défragmentation de la mémoire
-docker exec redis redis-cli -a ${REDIS_PASSWORD} MEMORY PURGE
-```
-
-### Persistance des Données
-
-Redis est configuré avec persitance RDB :
-- Snapshots périodiques
-- Sauvegarde automatique
-- Restauration au démarrage
-
-## Sécurité
-
-### Conmfiguration Réseau
-
-- Accès limité au rśeau `db`
-- Authentification requise
-- Port exposé uniquement en local
-- Accès distant via VPN
-
-### Bonnes pratiques
-
-1. Protection par mot de passe
-2. Désactivation des commandes dangereuses
-3. Limitation de la mémoire maximale
-4. Surveillance des connexions
-
-## Commandes Utiles
-
-### Connexion et Test
-
-```bash
-# Connexion CLI
-docker exec -it redis redis-cli -a ${REDIS_PASSWORD}
-
-# Test de connexion
-docker exec redis redis-cli -a ${REDIS_PASSWORD} PING
-
-# Informations serveur
-docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO server
-```
-
-### Gestion des Données
-
-```bash
-# Liste des clés
-docker exec redis redis-cli -a ${REDIS_PASSWORD} KEYS "*"
-
-# Obtenir une valeur
-docker exec redis redis-cli -a ${REDIS_PASSWORD} GET key_name
-
-# Définir une valeur
-docker exec redis redis-cli -a ${REDIS_PASSWORD} SET key_name value
-
-# Supprimer une clé
-docker exec redis redis-cli -a ${REDIS_PASSWORD} DEL key_name
-```
-
-### Monitoring
-
-```bash
-# Clients connectés
-docker exec redis redis-cli -a ${REDIS_PASSWORD} CLIENT LIST
-
-# Statistiques de la mémoire
-docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO memory
-
-# Statistiques des commandes
-docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO commandstats
-```
-
-### Gestion du cache
-
-```bash
-# Taux de succès du cache
-docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO stats | grep hit_rate
-
-# Nettoyage complet
-docker exec redis redis-cli -a ${REDIS_PASSWORD} FLUSHALL
-
-# Nettoyage sélectif
-docker exec redis redis-cli -a ${REDIS_PASSWORD} SCAN 0 MATCH "pattern:*" COUNT 100
-```
-
-## Résolution des Problèmes
-
-### Problèmes Courants
-
-1. Problèmes de Mémoire
-```bash
-# Vérification de l'utilisation mémoire
-docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO memory
-
-# Liste des grosses clés
-docker exec redis redis-cli -a ${REDIS_PASSWORD} --bigkeys
-```
-
-2. Problèmes de Connexion
-```bash
-# Vérification des clients
-docker exec redis redis-cli -a ${REDIS_PASSWORD} CLIENT LIST
-
-# Test de latence
-docker exec redis redis-cli -a ${REDIS_PASSWORD} --latency
-```
-
-3. Problèmes de Performance
-```bash
-# Surveillance en temps réel
-docker exec redis redis-cli -a ${REDIS_PASSWORD} MONITOR
-
-# Analyse des commandes lentes
-docker exec redis redis-cli -a ${REDIS_PASSWORD} SLOWLOG GET 10
-```
-
-### Scripts de Maintenance
-
-```bash
-# Surveillance de l'utilisation mémoire
-watch -n 1 'docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO memory | grep used_memory_human'
-
-# Surveillance des connexions
-watch -n 1 'docker exec redis redis-cli -a ${REDIS_PASSWORD} CLIENT LIST | wc -l'
-
-# Surveillance des opérations
-watch -n 1 'docker exec redis redis-cli -a ${REDIS_PASSWORD} INFO stats | grep ops'
-```
-
-## Optimisation
-
-### Configuration recommandée
-
-```bash
-# Paramètres de Performance
-maxmemory 2gb
+### 1.2 Configuration Redis
+```conf
+# config/redis/redis.conf
+# Mémoire
+maxmemory 256mb
 maxmemory-policy allkeys-lru
-maxclients 10000
+
+# Persistance
+appendonly yes
+appendfsync everysec
+
+# Connexions
+maxclients 50
 timeout 300
-tcp-keepalive 300
+
+# Sécurité
+protected-mode yes
 ```
 
-### Paramètres de Persistance
+## 2. Gestion
 
+### 2.1 Commandes de base
 ```bash
-# Configuration RDB
-save 900 1
-save 300 10
-save 60 10000
-rdbcompression yes
-rdbchecksum yes
+# Connexion
+docker compose exec redis redis-cli -a ${REDIS_PASSWORD}
+
+# Monitoring
+redis-cli info
+
+# Nettoyage
+redis-cli FLUSHDB  # Base courante
+redis-cli FLUSHALL # Toutes les bases
 ```
+
+### 2.2 Surveillance
+```bash
+# Stats en temps réel
+redis-cli --stat
+
+# Monitoring
+redis-cli monitor
+```
+
+## 3. Maintenance
+
+### 3.1 Nettoyage
+```bash
+# Nettoyage cache
+make redis-clean
+
+# Optimisation
+make redis-optimize
+```
+
+### 3.2 Maintenance régulière
+```bash
+# Vérification
+redis-cli --scan | wc -l  # Nombre de clés
+
+# Statistiques
+redis-cli info | grep used_memory
+```
+
+## 4. Sécurité
+
+### 4.1 Authentification
+```bash
+# Changement mot de passe
+make redis-password
+
+# Vérification accès
+redis-cli ping
+```
+
+### 4.2 Réseau
+```yaml
+networks:
+  backend:  # Réseau interne uniquement
+```
+
+## 5. Performance
+
+### 5.1 Monitoring
+```bash
+# Stats mémoire
+redis-cli info memory
+
+# Stats clients
+redis-cli info clients
+```
+
+### 5.2 Optimisation
+```bash
+# Configuration mémoire
+redis-cli config set maxmemory-policy allkeys-lru
+redis-cli config set maxmemory "256mb"
+```
+
+## 6. Politique de Cache
+
+### 6.1 Configuration
+```conf
+# Politique d'éviction
+maxmemory-policy allkeys-lru  # Least Recently Used
+# Échantillons pour éviction
+maxmemory-samples 5
+```
+
+### 6.2 Gestion
+```bash
+# Statistiques éviction
+redis-cli info stats | grep evicted
+
+# Taille actuelle
+redis-cli info memory | grep used_memory_human
+```
+
+## 7. Persistance
+
+### 7.1 Configuration
+```conf
+# AOF
+appendonly yes
+appendfsync everysec
+
+# RDB
+save 900 1    # 15 min si 1 changement
+save 300 10   # 5 min si 10 changements
+save 60 10000 # 1 min si 10000 changements
+```
+
+### 7.2 Gestion
+```bash
+# Sauvegarde manuelle
+redis-cli BGSAVE
+
+# Status persistance
+redis-cli info persistence
+```
+
+## 8. Troubleshooting
+
+### 8.1 Problèmes courants
+```bash
+# Logs
+docker compose logs redis
+
+# Connexions
+redis-cli client list
+```
+
+### 8.2 Performance
+```bash
+# Commandes lentes
+redis-cli SLOWLOG GET
+
+# Clients bloqués
+redis-cli CLIENT LIST
+```
+
+## 9. Monitoring
+
+### 9.1 Métriques importantes
+```bash
+# Usage mémoire
+used_memory_human
+used_memory_peak_human
+
+# Clients
+connected_clients
+blocked_clients
+
+# Performance
+instantaneous_ops_per_sec
+hit_rate
+```
+
+### 9.2 Alertes
+```bash
+# Seuils d'alerte
+maxmemory-warning 75%  # Alerte à 75% utilisation
+```
+
+## 10. Bonnes Pratiques
+
+### 10.1 Quotidien
+- Vérifier usage mémoire
+- Surveiller nombre de connexions
+- Monitorer les évictions
+
+### 10.2 Hebdomadaire
+- Analyse des clés
+- Vérification persistance
+- Nettoyage si nécessaire
+
+### 10.3 Mensuel
+- Optimisation configuration
+- Revue des politiques de cache
+- Test de charge

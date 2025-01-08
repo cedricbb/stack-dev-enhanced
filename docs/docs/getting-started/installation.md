@@ -1,162 +1,174 @@
-# Guide d'installation
-
-Ce guide détaille les étapes d'installation de la stack de développement
+# Guide d'Installation
 
 ## Prérequis
 
-Avant de commencer, assurez-vous d'avoir installé :
-
-- Docker (>= 20.10.0)
-- Docker Compose (>= 2.0.0)
-- Git
+### Système
+- Ubuntu Server 22.04 LTS
+- Docker 24.0+
+- Docker Compose v2.0+
 - Make
-- OpenSSL
+- Git
 
-## 1. Clonage du projet
+### Matériel (B1 Pro)
+- CPU : Intel N4100/N4120
+- RAM : 8GB
+- Stockage : 256GB SSD
 
+## 1. Installation initiale
+
+### 1.1 Clonage du projet
 ```bash
-git clone https://github.com/cedricbb/stack-dev-enhanced.git
-cd stack-dev-enhanced
+git clone https://github.com/votre-username/stack-dev.git
+cd stack-dev
 ```
 
-## 2. Configuration SSL
-
-La stack utilise des certificats SSL pour sécuriser les communications. Le script `scripts/generate-certificates.sh` gère la création des certificats.
-
-### 2.1 Génération des Certificats
-
+### 1.2 Configuration de base
 ```bash
-make ssl-init
+# Création du fichier .env
+cp .env.example .env
+
+# Édition des variables
+nano .env
 ```
 
-Ce script va :
-- Créer un répertoire pour les certificats
-- Générer une autorité de certification (CA)
-- Créer un certificat de domaine signé par la CA
-- Configurer les permissions appropriées
-
-### 2.2 Installation du Certificat CA
-
-Pour que votre navigateur fasse confiance aux certificats :
-
-```bash
-sudo cp ./traefik/certificates/ca.pem /usr/local/share/ca-certificates/
-sudo update-ca-certificates
+Variables requises :
+```env
+DOMAIN_NAME=votredomaine.fr
+ACME_EMAIL=votre@email.com
 ```
 
-## 3. Configuration de l'Accès à Distance (Optionnel)
-
-### 3.1 Installation de Wireguard
-
-Si vous souhaitez accéder à votre stack à distance de manière sécurisée :
-
+### 1.3 Initialisation
 ```bash
-sudo ./scripts/setup-wireguard.sh
-```
-
-Le script va :
-- Installer Wireguard
-- Générer les clés serveur et client
-- Configurer le serveur VPN
-- Activer le forwarding IP
-- Démarrer le service
-
-### 3.2 Configuration de Cloudflare Tunnel (Optionnel en cas d'IPV6 publique)
-
-Pour une exposition sécurisée sur Internet :
-
-```bash
-sudo ./scripts/setup-cloudflare.sh
-```
-
-Ce script :
-- Installe Cloudflared
-- Configure le dépçot Cloudflare
-Prépare l'environnement pour les tunnels
-
-## 4. Configuration des Variables d'Environnement
-
-Générez des mots de passe sécurisés pour tous les services :
-
-```bash
-make generate-passwords
-```
-
-Cette commande va créer un fichier `.env` contenant :
-
-- Identifiants MariaDB
-- Identifiants PostgreSQL
-- Identifiants PGAdmin
-- Mot de passe Redis
-- Mot de passe Grafana
-Identifiants du dashboard Traefik
-
-## 5. Configuration du DNS Local
-
-Ajoutez les entrées suivantes à votre fichier `/etc/hosts` :
-
-```bash
-127.0.0.1 traefik.localhost
-127.0.0.1 docs.localhost
-127.0.0.1 mariadb.localhost
-127.0.0.1 postgres.localhost
-127.0.0.1 redis.localhost
-127.0.0.1 phpmyadmin.localhost
-127.0.0.1 pgadmin.localhost
-127.0.0.1 grafana.localhost
-127.0.0.1 prometheus.localhost
-127.0.0.1 cadvisor.localhost
-```
-
-## 6. Démarrage de la Stack
-
-Initialisez et démarrez la stack :
-
-```bash
-# Initialisation
+# Initialisation complète
 make init
-
-# Démarrage
-make up
 ```
 
-## 7. Vérification de l'Installation
+Cette commande :
+- Crée la structure des dossiers
+- Génère les secrets
+- Configure les réseaux Docker
+- Met en place SSL/TLS
 
-Vérifiez que tous les services sont opérationnels :
+## 2. Configuration de la Sécurité
 
+### 2.1 Installation des prérequis
 ```bash
-make ps
-make health-check
+sudo apt update
+sudo apt install -y ufw fail2ban wireguard
 ```
 
-## 8. Résolution des Problèmes Courants
-
-### Certificats non reconnus
-
-Si les certificats ne sont pas reconnus par votre navigateur :
-
+### 2.2 Configuration sécurité
 ```bash
-sudo update-ca-certificates --fresh
+# Configuration complète
+make setup-security
 ```
 
-### Conflits de Ports
+Cette commande configure :
+- WireGuard VPN
+- Pare-feu UFW
+- Fail2ban
 
-Si vous rencontrez des conflits de ports, modifiez les ports dans le fichier .`.env` :
+## 3. Démarrage des Services
 
+### 3.1 Lancement de la stack
 ```bash
-DATABASE_PORT=3306
-POSTGRES_PORT=5432
-REDIS_PORT=6379
+make start
 ```
 
-### Services Inaccessibles
-
-Vérifiez l'état des services :
-
+### 3.2 Vérification
 ```bash
-docker-compose logs [service_name]
+# Status des services
+make status
+
+# Vérification santé
+make check-health
 ```
 
-## Prochaines Étapes
+## 4. Configuration DNS
 
-Une fois l'installation terminée, consultez le Guide de configuration pour personnaliser votre environnement.
+### 4.1 Configuration locale
+```bash
+make update-hosts
+```
+
+### 4.2 Configuration DNS externe
+Ajoutez ces enregistrements DNS pour votre domaine :
+```text
+Type    Nom              Valeur
+A       @               <VOTRE_IP_SERVER>
+CNAME   *              @
+```
+
+## 5. Accès aux Services
+
+| Service    | URL                                  |
+|------------|--------------------------------------|
+| Traefik    | https://traefik.votredomaine.fr     |
+| Portainer  | https://portainer.votredomaine.fr    |
+| Netdata    | https://netdata.votredomaine.fr      |
+| Docs       | https://docs.votredomaine.fr         |
+
+## 6. Vérification et Maintenance
+
+### 6.1 Logs
+```bash
+# Tous les services
+make logs
+
+# Service spécifique
+docker compose logs [service]
+```
+
+### 6.2 Sauvegardes
+```bash
+# Sauvegarde
+make backup
+
+# Restauration
+make restore BACKUP_DATE=YYYY-MM-DD-HH-MM-SS
+```
+
+## 7. Problèmes courants
+
+### 7.1 Certificats SSL
+Si les certificats ne sont pas générés :
+```bash
+make ssl
+```
+
+### 7.2 Services inaccessibles
+```bash
+# Redémarrage des services
+make restart
+
+# Vérification des logs
+make logs
+```
+
+### 7.3 Problèmes de performances
+```bash
+# Vérification des ressources
+make monitoring-status
+```
+
+## 8. Mise à jour
+
+### 8.1 Mise à jour des services
+```bash
+# Arrêt des services
+make stop
+
+# Sauvegarde
+make backup
+
+# Mise à jour et redémarrage
+git pull
+make start
+```
+
+## 9. Prochaines étapes
+
+Une fois l'installation terminée :
+1. Configurez WireGuard sur vos appareils
+2. Changez les mots de passe par défaut
+3. Consultez la documentation des services

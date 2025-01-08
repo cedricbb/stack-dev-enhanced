@@ -1,207 +1,194 @@
 # MariaDB
 
-## Vue d'ensemble
+## 1. Configuration Optimisée B1 Pro
 
-MariaDB est configuré dans notre stack avec la version 10.11, incluant des métriques de surveillance et une configuration de sauvegarde automatisée.
-
-## Configuration
-
-### Configuration Docker
-
+### 1.1 Configuration Docker
 ```yaml
-container_name: mariadb
-restart: always
-image: mariadb:10.11
-security_opt:
-  - no-new-privileges:true
-environment:
-    - MARIADB_ROOT_USER=${DATABASE_ROOT_USER}
-    - MARIADB_ROOT_PASSWORD=${DATABASE_ROOT_PASSWORD}
-    - MARIADB_ROOT_HOST=%
-volumes:
-    - mariadb:/var/lib/mysql
-    - ./dumps:/dumps
-    - ./configs/mariadb:/etc/prometheus/mariadb:ro
-    - ./scripts:/scripts:ro
-
-ports:
-    - 3306:3306
-
-networks:
-    - db
+# docker-compose.yml
+services:
+  mariadb:
+    image: mariadb:10.11
+    command: --performance_schema=OFF --table_definition_cache=400
+    secrets:
+      - db_root_password
+    environment:
+      - MARIADB_ROOT_PASSWORD_FILE=/run/secrets/db_root_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          memory: 256M
 ```
 
-### Variables d'environnement
+### 1.2 Configuration MariaDB
+```ini
+# config/mariadb/my.cnf
+[mysqld]
+# Désactivation des fonctionnalités non essentielles
+performance_schema = OFF
+skip_name_resolve = ON
 
-Dans votre fichier `.env` :
+# Cache et Mémoire
+table_definition_cache = 400
+table_open_cache = 256
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+
+# Connexions
+max_connections = 50
+thread_cache_size = 10
+
+# InnoDB optimisations
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# Optimisation requêtes
+sort_buffer_size = 2M
+join_buffer_size = 2M
+```
+
+## 2. Gestion
+
+### 2.1 Commandes de base
 ```bash
-DATABASE_ROOT_USER=root
-DATABASE_ROOT_PASSWORD=votre_mot_de_passe_secure
+# Connexion
+docker compose exec mariadb mysql -u root -p
+
+# Sauvegarde
+make backup-db
+
+# Restauration
+make restore-db BACKUP_DATE=YYYY-MM-DD
 ```
 
-## Sauvegarde et Restauration
+### 2.2 Surveillance
+```sql
+-- Status
+SHOW GLOBAL STATUS;
 
-### Sauvegarde Manuelle
+-- Variables
+SHOW VARIABLES;
 
+-- Processus
+SHOW PROCESSLIST;
+```
+
+## 3. Maintenance
+
+### 3.1 Optimisation
+```sql
+-- Analyse tables
+ANALYZE TABLE table_name;
+
+-- Optimisation tables
+OPTIMIZE TABLE table_name;
+
+-- Vérification tables
+CHECK TABLE table_name;
+```
+
+### 3.2 Maintenance régulière
+```bash
+# Nettoyage
+make db-clean
+
+# Optimisation
+make db-optimize
+```
+
+## 4. Sécurité
+
+### 4.1 Secrets
+```bash
+# Génération nouveau mot de passe
+make generate-db-password
+
+# Application changement
+make update-db-password
+```
+
+### 4.2 Réseau
+```yaml
+networks:
+  db:     # Réseau isolé
+    internal: true
+```
+
+## 5. Sauvegarde
+
+### 5.1 Configuration
+```bash
+# Sauvegarde automatique
+0 2 * * * make backup-db
+
+# Rotation
+KEEP_BACKUPS=7  # Garde 7 jours
+```
+
+### 5.2 Scripts
 ```bash
 # Sauvegarde complète
-docker exec mariadb mysqldump \
-    --user=root \
-    --password=root \
-    --all-databases \
-    --events \
-    --routines \
-    --triggers \
-    > ./dumps/$(date +%Y-%m-%d_%H-%M-%S)/mariadb_fulll_backup.sql
+mysqldump --all-databases > backup.sql
+
+# Sauvegarde spécifique
+mysqldump database_name > backup.sql
 ```
 
-### Sauvegarde automatique
+## 6. Performance
 
-Le script `scripts/backup.sh` effectue :
-- Sauvegardes quotidiennes
-- Compression des données
-- Rotation automatique (conservation 7 jours)
+### 6.1 Monitoring
+```sql
+-- Cache hits
+SHOW GLOBAL STATUS LIKE 'innodb_buffer_pool_reads';
 
+-- Connexions
+SHOW GLOBAL STATUS LIKE 'Threads_connected';
+```
+
+### 6.2 Optimisation requêtes
+```sql
+-- Analyse requêtes lentes
+SHOW VARIABLES LIKE 'slow_query_log%';
+SET GLOBAL slow_query_log = 1;
+```
+
+## 7. Troubleshooting
+
+### 7.1 Problèmes courants
 ```bash
-make backup
+# Logs
+docker compose logs mariadb
+
+# Statut
+docker compose ps mariadb
 ```
 
-### Restauration
+### 7.2 Performance
+```sql
+-- Tables verrouillées
+SHOW OPEN TABLES WHERE In_use > 0;
 
-```bash
-# Restauration complète
-cat ./dumps/backup.sql | docker exec -i mariadb mysql -u root -proot
+-- Processus bloquants
+SHOW PROCESSLIST;
 ```
 
-## Métriques et Monitoring
+## 8. Bonnes Pratiques
 
-### Configuration des Métriques
+### 8.1 Quotidien
+- Vérifier les logs
+- Surveiller l'espace disque
+- Monitorer les connexions
 
-Le service mariadb-metrics expose les métriques pour Prometheus :
-```yaml
-mariadb-metrics:
-    image: bittnami/mysqld-exporter:latest
-    container_name: mariadb-metrics
-    command:
-        - --mysqld.username=root:secure_password
-        - --mysqld.adress=127.0.0.1:3306
-    ports:
-        - 9104:9104
-    networks:
-        - frontend
-        - db
-```
+### 8.2 Hebdomadaire
+- Sauvegarde complète
+- Analyse des tables
+- Vérification des performances
 
-### Métriques Disponibles
-
-- Connexions actives
-- Opérations par seconde
-- Utilisation de la mémoire
-- Performance des requêtes
-- État des réplications
-
-### Tableaux de Bord Grafana
-
-Des tableaux de bord préconfigurés sont disponibles dans Grafana pour visualiser :
-- Performance globale
-- Utilisation des ressources
-- Statistiques des requêtes
-- État de la réplication
-
-## Maintenance
-
-### Vérification de l'État
-
-```bash
-# status du service
-docker-compose ps mariadb
-
-# logs du service
-docker-compose logs -f mariadb
-
-# Vérification de la connexion
-docker exec mariadb mysqladmin ping -h localhost
-```
-
-### Optimisation
-
-```bash
-# Analyse des tables
-docker exec mariadb mysqlcheck -u root -p --all-databases --analyze
-
-# Optimisation des tables
-docker exec mariadb mysqlcheck -u root -p --all-databases --optimize
-```
-
-### Maintenance Programmée
-
-Tâches recommandées :
-1. Vérification hebdomadaire des logs
-2. Analyse mensuelle des tables
-3. Test trimestriel de restauration
-4. Rotation des sauvegardes (automatique)
-
-## Sécurité
-
-### Configuration Réseau
-
-- Accès limité au réseau `db`
-- Port exposé uniquement pour le développement local
-- Accès distant via VPN uniquement
-
-### Bonnes Pratiques
-
-1. Changez régulièrement les mots de passe
-2. Limitez les privilèges des utilisateurs
-3. Activez les logs d'audit
-4. Surveillez les tentatives de connexion
-5. Maintenez MariaDB à jour
-
-## Résolution des Problèmes
-
-### Problèmes Courants
-
-1. Connexion impossible
-```bash
-# Vérification des logs
-docker-compose logs mariadb
-
-# Vérification du réseau
-docker exec mariadb mysqladmin ping
-```
-
-2. Performance dégradée
-```bash
-# Vérification des processus
-docker exec mariadb mysqladmin processlist
-
-# Analyse des requêtes lentes
-docker exec mariadb tail -f /var/log/mysql/slow-query.log
-```
-
-3. Erreurs de sauvegarde
-```bash
-# Vérification de l'espace disque
-docker exec mariadb df -h
-
-# Test de sauvegarde manuelle
-docker exec mariadb mysqldump --version
-
-## Commandes Utiles
-
-```bash
-# Connexion à la base
-docker exec -it mariadb mysql -uroot -p
-
-# Import des données
-docker exec -i mariadb mysql -uroot -p database_name < ./dumps/dump.sql
-
-# Export des données
-docker exec mariadb mysqldump -uroot -p database_name > ./dumps/dump.sql
-
-# Création d'utilisateur
-docker exec mariadb mysql -uroot -p -e "CREATE USER 'newuser'@%' IDENTIFIED BY 'password';"
-
-# Attribution des droits
-docker exec mariadb mysql -uroot -p -e "GRANT ALL PRIVILEGES ON database.* TO 'newuser'@'%';"
-```
+### 8.3 Mensuel
+- Test de restauration
+- Optimisation des tables
+- Revue des permissions

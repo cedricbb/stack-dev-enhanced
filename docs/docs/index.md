@@ -1,99 +1,138 @@
-# 🚀 Stack de Développement Docker
+# Stack de Développement Optimisée B1 Pro
 
-Cette stack de développement Docker est une collection complète de services pour faciliter le développement et la gestion de projets.
+## Vue d'ensemble
 
-## 📋 Documentation
+Cette stack de développement est optimisée pour fonctionner sur un BMAX B1 Pro avec :
+- CPU : Intel N4100/N4120
+- RAM : 8GB
+- Stockage : 256GB SSD
 
-La documentation complète est disponible dans le dossier `docs/` :
+## Services
 
-### 🏗️ Installation et Configuration
-- [Guide d'Installation](docs/getting-started/installation.md)
-- [Guide de Configuration](docs/getting-started/configuration.md)
+| Service | Description | Port | URL |
+|---------|-------------|------|-----|
+| Traefik | Reverse Proxy | 80/443 | traefik.votredomaine.fr |
+| MariaDB | Base de données | 3306 | - |
+| Redis | Cache | 6379 | - |
+| Portainer | Gestion Docker | 9000 | portainer.votredomaine.fr |
+| Netdata | Monitoring | 19999 | netdata.votredomaine.fr |
+| Documentation | MkDocs | 8000 | docs.votredomaine.fr |
+| Service | Description | Port | URL |
+| Adminer | Interface BDD | 8080 | adminer.votredomaine.fr |
 
-### 🔐 Sécurité
-- [Accès à Distance](docs/security/remote-access.md)
-- [Mesures de Sécurité](docs/security/security-measures.md)
+## Démarrage Rapide
 
-### 📊 Services
-#### Bases de Données
-- [MariaDB](docs/services/databases/mariadb.md)
-- [PostgreSQL](docs/services/databases/postgresql.md)
-- [Redis](docs/services/databases/redis.md)
-
-#### Monitoring
-- [Prometheus](docs/services/monitoring/prometheus.md)
-- [Grafana](docs/services/monitoring/grafana.md)
-- [cAdvisor](docs/services/monitoring/cadvisor.md)
-
-#### Métriques
-- [Exporters de Métriques](docs/services/metrics/exporters.md)
-
-#### Administration
-- [Interfaces d'Administration](docs/services/management/admin-interfaces.md)
-
-### 🛠️ Maintenance
-- [Guide de Maintenance](docs/maintenance/maintenance.md)
-
-## 📦 Services Inclus
-
-| Service | Version | Description |
-| --- | --- | --- |
-| 🔄 Traefik | v2.10 | Reverse Proxy & Load Balancer |
-| 📊 MariaDB | 10.11 | Base de données MySQL |
-| 📊 PostgreSQL | 15 | Base de données PostgreSQL |
-| ⚡ Redis | 7 | Base de données Redis |
-| 🔍 phpMyAdmin | 5.2 | Interface MariaDB |
-| 📊 pgAdmin | 6 | Interface PostgreSQL |
-| 📊 Grafana | 9 | Visualisation de métriques |
-| 📊 Prometheus | latest | Collecte de métriques |
-| 📊 cAdvisor | latest | Monitoring conteneurs |
-
-## 🚦 Démarrage Rapide
-
+1. Installation
 ```bash
-# Clonage du projet
-git clone https://github.com/votre-username/stack-dev-enhanced.git
-cd stack-dev-enhanced
-
-# Configuration
-cp .env.example .env
-make generate-passwords
-
-# Initialisation et démarrage
+git clone https://github.com/votre-repo/stack-dev.git
+cd stack-dev
 make init
-make up
 ```
 
-## 🛠️ Commandes Principales
-
+2. Configuration
 ```bash
-make up              # Démarrer la stack
-make down            # Arrêter la stack
-make ps              # Status des services
-make logs            # Logs des services
-make backup          # Sauvegarder les données
-make restore         # Restaurer les données
-make update          # Mettre à jour la stack
+# Générer les secrets
+make generate-secrets
+
+# Configurer VPN
+make setup-wireguard
 ```
 
-## 🌐 Accès aux Services
+3. Démarrage
+```bash
+make start
+```
 
-Tous les services sont accessibles via HTTPS :
-- https://traefik.localhost - Dashboard Traefik
-- https://phpmyadmin.localhost - Interface MariaDB
-- https://pgadmin.localhost - Interface PostgreSQL
-- https://grafana.localhost - Visualisation
-- https://prometheus.localhost - Métriques
+## Organisation du Projet
 
-## 🤝 Contribution
+```plaintext
+.
+├── config/          # Configurations des services
+├── secrets/         # Secrets Docker
+├── scripts/         # Scripts d'administration
+├── docs/           # Documentation
+└── docker-compose.yml
+```
 
-Les contributions sont bienvenues ! N'hésitez pas à :
-1. Forker le projet
-2. Créer une branche (`git checkout -b feature/amelioration`)
-3. Commiter vos changements (`git commit -am 'Ajout de fonctionnalité'`)
-4. Pusher la branche (`git push origin feature/amelioration`)
-5. Ouvrir une Pull Request
+## Sécurité
 
-## 📝 Licence
+- VPN WireGuard pour accès distant
+- Pare-feu UFW configuré
+- Fail2ban activé
+- Let's Encrypt pour SSL/TLS
 
-Ce projet est sous licence [MIT](LICENSE).
+## Fonctionnalités
+
+### Développement
+- Support multi-projets
+- Hot reload optimisé
+- Environnement isolé
+- Documentation intégrée
+
+### Monitoring
+- Surveillance ressources
+- Alertes configurables
+- Logs centralisés
+- Interface web
+
+### Sécurité
+- VPN intégré
+- SSL/TLS automatique
+- Secrets sécurisés
+- Accès restreint
+
+## Utilisation
+
+### Commandes Principales
+```bash
+make start         # Démarrer la stack
+make stop          # Arrêter la stack
+make status        # Voir le status
+make logs          # Voir les logs
+```
+
+### Développement
+```bash
+make create-project    # Nouveau projet
+make dev              # Mode développement
+make build            # Build production
+```
+
+### Monitoring
+```bash
+make monitoring-status  # Status services
+make check-health      # Vérification santé
+```
+
+## Limitations B1 Pro
+
+### Ressources
+- CPU : Limité à 4 cœurs
+- RAM : Maximum 8GB
+- Stockage : Selon SSD
+
+### Recommandations
+- Maximum 3-4 projets simultanés
+- Build séquentiel
+- Monitoring actif des ressources
+
+## Documentation Détaillée
+
+- [Guide d'Installation](getting-started/installation.md)
+- [Configuration](getting-started/configuration.md)
+- [Sécurité](security/security-measures.md)
+- [Maintenance](maintenance/maintenance.md)
+
+## Contribution
+
+1. Fork le projet
+2. Créez une branche (`git checkout -b feature/amélioration`)
+3. Commit (`git commit -am 'Ajout fonctionnalité'`)
+4. Push (`git push origin feature/amélioration`)
+5. Créez une Pull Request
+
+## Support
+
+- Documentation : https://docs.votredomaine.fr
+- Issues : GitHub Issues
+- Wiki : GitHub Wiki

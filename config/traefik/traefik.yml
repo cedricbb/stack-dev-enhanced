@@ -1,0 +1,89 @@
+# Configuration de base de Traefik
+api:
+  dashboard: true
+  insecure: false
+
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+    http:
+      tls: {}
+
+# Configuration des providers
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedBydefault: false
+    network: frontend
+  file:
+    directory: /etc/traefik
+    watch: true
+
+# Configuration des certificats TLS
+tls:
+  certificates:
+    - certFile: /certs/localhost.crt
+      keyFile: /certs/localhost.key
+
+# Middlewares de sécurité
+http:
+  middlewares:
+    secure-headers:
+      headers:
+        sslRedirect: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentTypeNosniff: true
+        browserXssFilter: true
+        customResponseHeaders:
+          X-Powered-By: ""
+    
+    monitoring-auth:
+      basicAuth:
+        users:
+          - "${TRAEFIK_DASHBOARD_USER}:${TRAEFIK_DASHBOARD_PASSWORD}"
+
+# Configuration des services de monitoring
+http:
+  routers:
+    portainer:
+      rule: "Host(`portainer.localhost`)"
+      service: portainer
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - secure-headers
+
+    netdata:
+      rule: "Host(`netdata.localhost`)"
+      service: netdata
+      entryPoints:
+        - websecure
+      tls: {}
+      middlewares:
+        - secure-headers
+
+  services:
+    portainer:
+      loadBalancer:
+        servers:
+          - url: "http://portainer:9000"
+
+    netdata:
+      loadBalancer:
+        servers:
+          - url: "http://netdata:19999"

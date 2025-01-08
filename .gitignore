@@ -3,43 +3,23 @@
 .env.*
 !.env.example
 
-# Certificats SSL et clés
-traefik/certificates/*
-*.pem
-*.key
-*.crt
-*.csr
-*.srl
+# Secrets et certificats
+/secrets/
+/certs/
 
-# Dumps de base de données
-dumps/*
-*.sql
-*.dump
+# Projets
+/projects/
 
-# Fichiers de configuration sensibles
-# configs/*
-# !configs/*/example*
-# !configs/*/*.example
-# !configs/*/*.dist
-# !configs/*/README.md
+# Données
+/data/
+/dumps/
+
+# Documentation générée
+/docs/_site/
+/site/
 
 # Logs
 *.log
-logs/
-
-# Fichiers système
-.DS_Store
-Thumbs.db
-
-# Fichiers de mot de passe
-*password*
-*secret*
-!generate_passwords.sh
-
-# Données des conteneurs
-data/
-volumes/
-*.rdb
 
 # IDEs et éditeurs
 .idea/
@@ -48,16 +28,6 @@ volumes/
 *.swo
 *~
 
-# Cache et fichiers temporaires
-*.cache
-*.tmp
-tmp/
-.sass-cache/
-node_modules/
-
-# Fichiers de build
-dist/
-build/
-*.pyc
-__pycache__/
-*.class
+# Système
+.DS_Store
+Thumbs.db
