@@ -45,7 +45,7 @@ create-dirs: ## Crée la structure des dossiers
 	@mkdir -p ./docker/dev/{node,php,python}
 	@mkdir -p ./docker/prod/{node,php,python}
 	# Dossiers des projets
-	@mkdir -p ./projects/{next,nuxt,symfony,python}
+	@mkdir -p ./projects/{next,nuxt,symfony,python,wordpress,angular,react,vue}
 	# Dossiers data
 	@mkdir -p ./data
 	@mkdir -p ./dumps
@@ -270,6 +270,42 @@ python-create: ## Crée un nouveau projet Python
 		pip install; \
 	echo "✅ Projet Python '$$name' créé"
 
+wordpress-create: ## Crée un nouveau projet Wordpress avec Bedrock
+	@read -p "Nom du projet: " name; \
+	mkdir -p ./projects/wordpress/$$name; \
+	docker compose run --rm -w /projects/wordpress/$$name php-dev \
+		composer create-project roots/bedrock .; \
+	echo "✅ Projet Wordpress '$$name' créé"
+
+angular-create: ## Crée un nouveau projet Angular
+	@read -p "Nom du projet: " name; \
+	mkdir -p ./projects/angular/$$name; \
+	docker compose run --rm -w /projects/angular/$$name node-dev \
+		npx @angular/cli new . --directory=. --style=scss --routing=true --skip-git; \
+	echo "✅ Projet Angular '$$name' créé"
+
+react-create: ## Crée un nouveau projet React
+	@read -p "Nom du projet: " name; \
+	mkdir -p ./projects/react/$$name; \
+	docker compose run --rm -w /projects/react/$$name node-dev \
+		npx create-react-app . \
+		--template typescript; \
+	echo "✅ Projet React '$$name' créé"
+
+vue-create: ## Crée un nouveau projet Vue.js
+	@read -p "Nom du projet: " name; \
+	mkdir -p ./projects/vue/$$name; \
+	docker compose run --rm -w /projects/vue/$$name node-dev \
+		npm create vue@latest . -- \
+		--typescript \
+		--router \
+		--pinia \
+		--vitest \
+		--cypress \
+		--eslint \
+		--prettier; \
+	echo "✅ Projet Vue.js '$$name' créé"
+
 # Développement
 next-dev: ## Lance le serveur de développement Next.js
 	@read -p "Nom du projet: " name; \
@@ -290,6 +326,27 @@ python-dev: ## Lance le serveur de développement Python
 	@read -p "Nom du projet: " name; \
 	docker compose run --rm -w /projects/python/$$name python-dev \
 		python app.py
+
+wordpress-dev: ## Lance le serveur de développement Wordpress
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/wordpress/$$name php-dev \
+		composer install && \
+		wp server --host=0.0.0.0
+
+angular-dev: ## Lance le serveur de développement Angular
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/angular/$$name node-dev \
+		ng serve
+
+react-dev: ## Lance le serveur de développement React
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/react/$$name node-dev \
+		npm start
+
+vue-dev: ## Lance le serveur de développement Vue.js
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/vue/$$name node-dev \
+		npm run dev -- --host
 
 # Build production
 next-build: ## Build Next.js pour production
@@ -312,6 +369,27 @@ python-build: ## Build Python pour production
 	docker compose run --rm -w /projects/python/$$name python-dev \
 		python -m build
 
+wordpress-build: ## Build Wordpress pour production
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/wordpress/$$name php-dev \
+		composer install --no-dev --optimize-autoloader && \
+		composer update --no-dev
+
+angular-build: ## Build Angular pour production
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/angular/$$name node-dev \
+		ng build --configuration production
+
+react-build: ## Build React pour production
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/react/$$name node-dev \
+		npm run build
+
+vue-build: ## Build Vue.js pour production
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/vue/$$name node-dev \
+		npm run build
+
 # Installation dépendances
 next-install: ## Installe les dépendances Next.js
 	@read -p "Nom du projet: " name; \
@@ -333,25 +411,105 @@ python-install: ## Installe les dépendances Python
 	docker compose run --rm -w /projects/python/$$name python-dev \
 		pip install -r requirements.txt
 
+wordpress-install: ## Installe les dépendances Wordpress
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/wordpress/$$name php-dev \
+		composer install
+
+angular-install: ## Installe les dépendances Angular
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/angular/$$name node-dev \
+		npm install
+
+react-install: ## Installe les dépendances React
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/react/$$name node-dev \
+		npm install
+
+vue-install: ## Installe les dépendances Vue.js
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/vue/$$name node-dev \
+		npm install
+
 # Commandes utiles
 project-lint: ## Lance le linter
-	@read -p "Type (next/nuxt/symfony): " type; \
+	@read -p "Type (next/nuxt/symfony/angular/wordpress/react/vue): " type; \
 	read -p "Nom du projet: " name; \
 	if [ $$type = "next" ] || [ $$type = "nuxt" ]; then \
 		docker compose run --rm -w /projects/$$type/$$name node-dev \
 			npm run lint; \
+	elif [ $$type = "wordpress" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name php-dev \
+			composer run-script lint; \
 	else \
 		docker compose run --rm -w /projects/$$type/$$name php-dev \
 			php vendor/bin/phpcs; \
 	fi
 
 project-test: ## Lance les tests
-	@read -p "Type (next/nuxt/symfony): " type; \
+	@read -p "Type (next/nuxt/symfony/angular/wordpress/react/vue): " type; \
 	read -p "Nom du projet: " name; \
 	if [ $$type = "next" ] || [ $$type = "nuxt" ]; then \
 		docker compose run --rm -w /projects/$$type/$$name node-dev \
 			npm run test; \
+	elif [ $$type = "wordpress" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name php-dev \
+			composer run-script test; \
 	else \
 		docker compose run --rm -w /projects/$$type/$$name php-dev \
 			php bin/phpunit; \
 	fi
+
+# Commandes d'optimisation
+optimize-images: ## Optimise les images du projet
+	@read -p "Type (vue/react/angular/wordpress): " type; \
+	read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/$$type/$$name node-dev \
+		npx imagemin-cli "public/images/**/*" --out-dir="public/images/optimized"
+
+analyze-bundle: ## Analyse la taille du bundle
+	@read -p "Type (vue/react/angular): " type; \
+	read -p "Nom du projet: " name; \
+	if [ $$type = "vue" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name node-dev \
+			npx vite-bundle-analyzer; \
+	elif [ $$type = "react" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name node-dev \
+			npm run analyze; \
+	elif [ $$type = "angular" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name node-dev \
+			ng build --stats-json && npx webpack-bundle-analyzer dist/stats.json; \
+	fi
+
+optimize-db: ## Optimise la base de données WordPress
+	@read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/wordpress/$$name php-dev \
+		wp db optimize && \
+		wp cache flush
+
+create-component: ## Crée un nouveau composant
+	@read -p "Type (vue/react/angular): " type; \
+	read -p "Nom du projet: " name; \
+	read -p "Nom du composant: " component; \
+	if [ $$type = "vue" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name node-dev \
+			npm run generate:component $$component; \
+	elif [ $$type = "react" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name node-dev \
+			npx generate-react-cli component $$component; \
+	elif [ $$type = "angular" ]; then \
+		docker compose run --rm -w /projects/$$type/$$name node-dev \
+			ng generate component $$component; \
+	fi
+
+storybook-dev: ## Lance Storybook en développement
+	@read -p "Type (vue/react/angular): " type; \
+	read -p "Nom du projet: " name; \
+	docker compose run --rm -w /projects/$$type/$$name node-dev \
+		npm run storybook
+
+deploy-staging: ## Déploie sur l'environnement de staging
+	@read -p "Type (vue/react/angular/wordpress): " type; \
+	read -p "Nom du projet: " name; \
+	make build type=$$type name=$$name && \
+	docker compose -f docker-compose.staging.yml up -d $$type-$$name

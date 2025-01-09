@@ -4,8 +4,8 @@ WORKDIR /projects
 
 RUN apk add --no-cache git
 
-# Outils de développement
-RUN npm install -g npm@latest
+# Installation des CLI globaux
+RUN npm install -g @angular/cli npm@latest
 
 # Configuration pour le hot reload
 ENV CHOKIDAR_USEPOLLING=true

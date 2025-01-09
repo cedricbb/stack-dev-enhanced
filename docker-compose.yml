@@ -255,7 +255,17 @@ services:
     - frontend
     - backend
 
-
+  wordpress-db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${DB_NAME}"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - wordpress_db:/var/lib/mysql
+    networks:
+      - db
 
 volumes:
   mariadb_data:
@@ -264,6 +274,7 @@ volumes:
   netdataconfig:
   netdatalib:
   netdatacache:
+  wordpress_db:
 
 networks:
   frontend:
