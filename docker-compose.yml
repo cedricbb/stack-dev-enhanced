@@ -65,6 +65,21 @@ services:
       timeout: 10s
       retries: 3
 
+  code-server:
+    image: codercom/code-server
+    environment:
+      - PASSWORD=${CODE_SERVER_PASSWORD}
+    volumes:
+      - ./projects:/home/coder/projects
+    networks:
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.code.rule=Host(`code.cedricbillard-dev.fr`)
+      - traefik.http.routers.code.entrypoints=websecure
+      - traefik.http.routers.code.tls.certresolver=letsencrypt
+      - traefik.http.services.code.loadbalancer.server.port=8080
+
   node-dev:
     build:
       context: ./docker/dev/node
