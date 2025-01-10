@@ -57,7 +57,6 @@ http:
           - "${TRAEFIK_DASHBOARD_USER}:${TRAEFIK_DASHBOARD_PASSWORD}"
 
 # Configuration des services de monitoring
-http:
   routers:
     portainer:
       rule: "Host(`portainer.localhost`)"
