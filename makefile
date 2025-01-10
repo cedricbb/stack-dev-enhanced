@@ -92,22 +92,22 @@ check-structure: ## Vérifie la structure des dossiers
 # Gestion des conteneurs
 start: ## Démarre la stack
 	@echo "${_YELLOW}${_BOLD}🚀 Démarrage de la stack...${_END}"
-	@docker compose up -d
+	@docker-compose up -d
 	@echo "${_GREEN}${_BOLD}✅ Stack démarrée${_END}"
 
 stop: ## Arrête la stack
 	@echo "${_YELLOW}${_BOLD}🛑 Arrêt de la stack...${_END}"
-	@docker compose down
+	@docker-compose down
 	@echo "${_GREEN}${_BOLD}✅ Stack arrêtée${_END}"
 
 restart: stop start ## Redémarre la stack
 
 status: ## Affiche le status des conteneurs
 	@echo "${_YELLOW}${_BOLD}📊 Status des conteneurs${_END}"
-	@docker compose ps
+	@docker-compose ps
 
 logs: ## Affiche les logs
-	@docker compose logs -f
+	@docker-compose logs -f
 
 # Sauvegarde et restauration
 .PHONY: backup restore
