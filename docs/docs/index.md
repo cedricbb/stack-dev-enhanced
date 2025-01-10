@@ -121,7 +121,6 @@ make check-health      # Vérification santé
 - [Guide d'Installation](getting-started/installation.md)
 - [Configuration](getting-started/configuration.md)
 - [Sécurité](security/security-measures.md)
-- [Maintenance](maintenance/maintenance.md)
 
 ## Contribution
 

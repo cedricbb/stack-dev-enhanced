@@ -34,7 +34,7 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN_NAME}`)
+      - traefik.http.routers.traefik.rule=Host(`traefik.cedricbillard-dev.fr`)
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.entrypoints=websecure
       - traefik.http.routers.traefik.tls.certresolver=letsencrypt
@@ -68,10 +68,14 @@ services:
   redis:
     container_name: redis
     image: redis:7-alpine
+<<<<<<< HEAD
     command: >
       --requirepass ${REDIS_PASSWORD}
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
+=======
+    command: --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
+>>>>>>> b11238e (corrections serveurs)
     secrets:
       - redis_password
     volumes:
@@ -147,7 +151,7 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN_NAME}`)
+      - traefik.http.routers.portainer.rule=Host(`portainer.cedricbillard-dev.fr`)
       - traefik.http.routers.portainer.entrypoints=websecure
       - traefik.http.routers.portainer.tls.certresolver=letsencrypt
       - traefik.http.services.portainer.loadbalancer.server.port=9000
@@ -181,7 +185,7 @@ services:
       - NETDATA_CLAIM_URL=https://app.netdata.cloud
     labels:
       - traefik.enable=true
-      - traefik.http.routers.netdata.rule=Host(`netdata.${DOMAIN_NAME}`)
+      - traefik.http.routers.netdata.rule=Host(`netdata.cedricbillard-dev.fr`)
       - traefik.http.routers.netdata.entrypoints=websecure
       - traefik.http.routers.netdata.tls.certresolver=letsencrypt
       - traefik.http.services.netdata.loadbalancer.server.port=19999
@@ -204,7 +208,7 @@ services:
           memory: 64M
     labels:
       - traefik.enable=true
-      - traefik.http.routers.adminer.rule=Host(`adminer.${DOMAIN_NAME}`)
+      - traefik.http.routers.adminer.rule=Host(`adminer.cedricbillard-dev.fr`)
       - traefik.http.routers.adminer.entrypoints=websecure
       - traefik.http.routers.adminer.tls.certresolver=letsencrypt
       - traefik.http.services.adminer.loadbalancer.server.port=8080
@@ -226,7 +230,7 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.docs.rule=Host(`docs.${DOMAIN_NAME}`)
+      - traefik.http.routers.docs.rule=Host(`docs.cedricbillard-dev.fr`)
       - traefik.http.routers.docs.entrypoints=websecure
       - traefik.http.routers.docs.tls.certresolver=letsencrypt
       - traefik.http.services.docs.loadbalancer.server.port=8000

@@ -29,12 +29,6 @@ providers:
     directory: /etc/traefik
     watch: true
 
-# Configuration des certificats TLS
-tls:
-  certificates:
-    - certFile: /certs/localhost.crt
-      keyFile: /certs/localhost.key
-
 # Middlewares de sécurité
 http:
   middlewares:
@@ -48,8 +42,6 @@ http:
         customFrameOptionsValue: "SAMEORIGIN"
         contentTypeNosniff: true
         browserXssFilter: true
-        customResponseHeaders:
-          X-Powered-By: ""
     
     monitoring-auth:
       basicAuth:
