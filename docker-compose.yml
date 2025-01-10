@@ -1,13 +1,5 @@
 version: "3.3"
 
-secrets:
-  db_root_password:
-    file: ./secrets/db_root_password.txt
-  redis_password:
-    file: ./secrets/redis_password.txt
-  portainer_password:
-    file: ./secrets/portainer_password.txt
-
 services:
   traefik:
     container_name: traefik
@@ -76,7 +68,7 @@ services:
   redis:
     container_name: redis
     image: redis:7-alpine
-    command: redis-server --requirepass $(cat /run/secrets/redis_password) --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 256mb --maxmemory-policy allkeys-lru
     secrets:
       - redis_password
     volumes:
@@ -95,6 +87,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  node-dev:
+    build:
+      context: ./docker/dev/node
+      dockerfile: Dockerfile
+    volumes:
+      - ./projects:/projects
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - frontend
+      - backend
+
+  php-dev:
+    build:
+      context: ./docker/dev/php
+      dockerfile: Dockerfile
+    volumes:
+      - ./projects:/projects
+    environment:
+      - APP_ENV=dev
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - frontend
+      - backend
 
   portainer:
     container_name: portainer
@@ -155,6 +183,30 @@ services:
       - traefik.http.routers.netdata.tls.certresolver=letsencrypt
       - traefik.http.services.netdata.loadbalancer.server.port=19999
 
+  adminer:
+    container_name: adminer
+    image: adminer:latest
+    environment:
+      - ADMINER_DEFAULT_SERVER=mariadb
+      - ADMINER_DESIGN=dracula
+    networks:
+      - frontend
+      - db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+        reservations:
+          memory: 64M
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.adminer.rule=Host(`adminer.${DOMAIN_NAME}`)
+      - traefik.http.routers.adminer.entrypoints=websecure
+      - traefik.http.routers.adminer.tls.certresolver=letsencrypt
+      - traefik.http.services.adminer.loadbalancer.server.port=8080
+    restart: unless-stopped
+
   docs:
     container_name: docs
     build:
@@ -179,93 +231,13 @@ services:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
 
-  adminer:
-    container_name: adminer
-    image: adminer:latest
-    environment:
-      - ADMINER_DEFAULT_SERVER=mariadb
-      - ADMINER_DESIGN=dracula
-    networks:
-      - frontend
-      - db
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.adminer.rule=Host(`adminer.${DOMAIN_NAME}`)
-      - traefik.http.routers.adminer.entrypoints=websecure
-      - traefik.http.routers.adminer.tls.certresolver=letsencrypt
-      - traefik.http.services.adminer.loadbalancer.server.port=8080
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 256M
-        reservations:
-          memory: 64M
-  
-  node-dev:
-    build:
-      context: ./docker/dev/node
-      dockerfile: Dockerfile
-    volumes:
-      - ./projects:/projects
-    environment:
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-      - CHOKIDAR_USEPOLLING=true
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-    networks:
-      - frontend
-      - backend
-
-  php-dev:
-    build:
-      context: ./docker/dev/php
-      dockerfile: Dockerfile
-    volumes:
-      - ./projects:/projects
-    environment:
-      - APP_ENV=dev
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-    networks:
-      - frontend
-      - backend
-
-  python-dev:
-    build:
-      context: ./docker/dev/python
-      dockerfile: Dockerfile
-  volumes:
-    - ./projects:/projects
-  environment:
-    - APP_ENV=dev
-  deploy:
-    resources:
-      limits:
-        cpus: '1'
-        memory: 1G
-  networks:
-    - frontend
-    - backend
-
-  wordpress-db:
-    image: mariadb:10.11
-    environment:
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "${DB_NAME}"
-      MYSQL_USER: "${DB_USER}"
-      MYSQL_PASSWORD: "${DB_PASSWORD}"
-    volumes:
-      - wordpress_db:/var/lib/mysql
-    networks:
-      - db
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+  portainer_password:
+    file: ./secrets/portainer_password.txt
 
 volumes:
   mariadb_data:
@@ -274,7 +246,6 @@ volumes:
   netdataconfig:
   netdatalib:
   netdatacache:
-  wordpress_db:
 
 networks:
   frontend:
