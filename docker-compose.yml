@@ -67,10 +67,14 @@ services:
 
   code-server:
     image: codercom/code-server
+    container_name: code-server
+    user: "1000:1000"
     environment:
+      - DOCKER_USER=$USER
       - PASSWORD=${CODE_SERVER_PASSWORD}
     volumes:
       - ./projects:/home/coder/projects
+      - code_server_data:/home/coder/.local/share/code-server
     networks:
       - frontend
     labels:
@@ -238,6 +242,8 @@ volumes:
   netdataconfig:
   netdatalib:
   netdatacache:
+  code_server_data:
+    driver: local
 
 networks:
   frontend:
