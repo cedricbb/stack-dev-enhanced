@@ -66,20 +66,19 @@ services:
       retries: 3
 
   code-server:
-    image: codercom/code-server
+    image: codercom/code-server:latest
     container_name: code-server
-    user: "1000:1000"
+    restart: unless-stopped
     environment:
-      - DOCKER_USER=$USER
-      - PASSWORD=${CODE_SERVER_PASSWORD}
+      - PASSWORD=${CODE_SERVER_PASSWORD:-changeme}
     volumes:
-      - ./projects:/home/coder/projects
-      - code_server_data:/home/coder/.local/share/code-server
+      - ./projects:/home/coder/project
+      - ./config/code-server:/home/coder/.config
     networks:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.code.rule=Host(`code.cedricbillard-dev.fr`)
+      - traefik.http.routers.code.rule=Host(`code.${DOMAIN_NAME}`)
       - traefik.http.routers.code.entrypoints=websecure
       - traefik.http.routers.code.tls.certresolver=letsencrypt
       - traefik.http.services.code.loadbalancer.server.port=8080
