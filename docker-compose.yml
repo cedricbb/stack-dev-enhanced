@@ -218,7 +218,7 @@ services:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.docs.rule=Host(`docs.cedricbillard-dev.fr`)
+      - traefik.http.routers.docs.rule=Host(`docs.cedricbillard-dev.fr/docs`)
       - traefik.http.routers.docs.entrypoints=websecure
       - traefik.http.routers.docs.tls.certresolver=letsencrypt
       - traefik.http.services.docs.loadbalancer.server.port=8000
