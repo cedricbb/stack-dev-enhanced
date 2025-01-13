@@ -70,7 +70,7 @@ services:
     container_name: code-server
     user: "1000:1000"
     environment:
-      - PASSWORD=${CODE_SERVER_PASSWORD:-changeme}
+      - PASSWORD=${CODE_SERVER_PASSWORD}
     volumes:
       - ./projects:/home/coder/project
       - ./config/code-server:/home/coder/.config:rw
