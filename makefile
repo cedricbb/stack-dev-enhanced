@@ -289,18 +289,9 @@ react-create: ## Crée un nouveau projet React
 	@read -p "Nom du projet: " name; \
 	mkdir -p ./projects/react/$$name && \
 	docker-compose run --rm -w /projects/react/$$name node-dev \
-		bash -c "npx create-react-app . --template typescript && \
-		npm install --save --legacy-peer-deps @testing-library/jest-dom@^5.14.1 \
-		@testing-library/react@^13.0.0 \
-		@testing-library/user-event@^13.2.1 \
-		@types/jest@^27.0.1 \
-		@types/node@^16.7.13 \
-		@types/react@^18.0.0 \
-		@types/react-dom@^18.0.0 \
-		typescript@^4.4.2 \
-		web-vitals@^2.1.0 \
-		react@^18.0.0 \
-		react-dom@^18.0.0" && \
+		sh -c 'npx create-react-app . --template typescript --force && \
+		npm install --legacy-peer-deps --save react@^18.0.0 react-dom@^18.0.0 && \
+		npm install --legacy-peer-deps' && \
 	echo "✅ Projet React '$$name' créé"
 
 # Développement
