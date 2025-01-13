@@ -329,13 +329,7 @@ react-dev: ## Lance le serveur de développement React
 
 vue-dev: ## Lance le serveur de développement Vue.js
 	@read -p "Nom du projet: " name; \
-	docker-compose run --rm -w /projects/vue/$$name node-dev \
-	--name vue-$$name \
-		-l "traefik.enable=true" \
-		-l "traefik.http.routers.vue-$$name.rule=Host(\`$$name.vue.cedricbillard-dev.fr\`)" \
-		-l "traefik.http.services.vue-$$name.loadbalancer.server.port=5173" \
-		-l "traefik.http.routers.vue-$$name.entrypoints=websecure" \
-		-l "traefik.http.routers.vue-$$name.tls.certresolver=letsencrypt" \
+	VUE_PROJECT=$$name docker-compose run --rm -w /projects/vue/$$name --service-name vue-dev-$$name vue-dev \
 		npm run dev
 
 python-dev: ## Lance le serveur de développement Python
