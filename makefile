@@ -237,90 +237,91 @@ adminer-status: ## Statut d'Adminer
 # Création de projets
 next-create: ## Crée un nouveau projet Next.js
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/next/$$name; \
-	docker-compose run --force-rm -w /projects/next/$$name node-dev \
+	mkdir -p ./projects/next/$$name && \
+	docker-compose run --rm -w /projects/next/$$name node-dev \
 		npx create-next-app . \
 		--typescript \
 		--tailwind \
 		--src-dir \
 		--app \
-		--import-alias "@/*"; \
+		--import-alias "@/*" && \
 	echo "✅ Projet Next.js '$$name' créé"
 
 nuxt-create: ## Crée un nouveau projet Nuxt
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/nuxt/$$name; \
-	docker-compose run --force-rm -w /projects/nuxt/$$name node-dev \
-		npx nuxi init .; \
+	mkdir -p ./projects/nuxt/$$name && \
+	docker-compose run --rm -w /projects/nuxt/$$name node-dev \
+		npx nuxi init . && \
 	echo "✅ Projet Nuxt '$$name' créé"
 
 symfony-create: ## Crée un nouveau projet Symfony
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/symfony/$$name; \
-	docker-compose run --force-rm -w /projects/symfony/$$name php-dev \
-		composer create-project symfony/skeleton .; \
+	mkdir -p ./projects/symfony/$$name && \
+	docker-compose run --rm -w /projects/symfony/$$name php-dev \
+		composer create-project symfony/skeleton . && \
 	echo "✅ Projet Symfony '$$name' créé"
 
 python-create: ## Crée un nouveau projet Python
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/python/$$name; \
-	docker-compose run --force-rm -w /projects/python/$$name python-dev \
-		python -m venv venv; \
-		source venv/bin/activate; \
-		pip install; \
+	mkdir -p ./projects/python/$$name && \
+	docker-compose run --rm -w /projects/python/$$name python-dev \
+		python -m venv venv && \
+		source venv/bin/activate && \
+		pip install && \
 	echo "✅ Projet Python '$$name' créé"
 
 wordpress-create: ## Crée un nouveau projet Wordpress avec Bedrock
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/wordpress/$$name; \
-	docker-compose run --force-rm -w /projects/wordpress/$$name php-dev \
-		composer create-project roots/bedrock .; \
+	mkdir -p ./projects/wordpress/$$name && \
+	docker-compose run --rm -w /projects/wordpress/$$name php-dev \
+		composer create-project roots/bedrock . && \
 	echo "✅ Projet Wordpress '$$name' créé"
 
 angular-create: ## Crée un nouveau projet Angular
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/angular/$$name; \
-	docker-compose run --force-rm -w /projects/angular/$$name node-dev \
-		npx @angular/cli new . --directory=. --style=scss --routing=true --skip-git; \
+	mkdir -p ./projects/angular/$$name && \
+	docker-compose run --rm -w /projects/angular/$$name node-dev \
+		npx @angular/cli new . --directory=. --style=scss --routing=true --skip-git && \
 	echo "✅ Projet Angular '$$name' créé"
 
 react-create: ## Crée un nouveau projet React
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/react/$$name; \
-	docker-compose run --rm /projects/react/$$name node-dev \
+	mkdir -p ./projects/react/$$name && \
+	docker-compose run --rm -w /projects/react/$$name node-dev \
 		npx create-react-app . \
-		--template typescript; \
+		--template typescript && \
 	echo "✅ Projet React '$$name' créé"
-
-vue-create:
-	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/vue/$$name && \
-	docker-compose run --rm -w /projects/vue/$$name node-dev \
-		npx create-vue@latest . \
-		--typescript \
-		--router \
-		--pinia \
-		--vitest \
-		--cypress \
-		--eslint \
-		--prettier && \
-	echo "✅ Projet Vue.js '$$name' créé"
-
+	
 # Développement
 next-dev: ## Lance le serveur de développement Next.js
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/next/$$name node-dev \
-		npm run dev
+	docker-compose run --rm -w /projects/next/$$name node-dev \
+		npm run dev -- --port 3000 --hostname 0.0.0.0
 
 nuxt-dev: ## Lance le serveur de développement Nuxt
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/nuxt/$$name node-dev \
-		npm run dev
+	docker-compose run --rm -w /projects/nuxt/$$name node-dev \
+		npm run dev -- --port 3000 --host 0.0.0.0
 
 symfony-dev: ## Lance le serveur de développement Symfony
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/symfony/$$name php-dev \
-		symfony serve
+	docker-compose run --rm -w /projects/symfony/$$name php-dev \
+		symfony serve --port=8000 --no-tls --allow-http
+
+angular-dev: ## Lance le serveur de développement Angular
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/angular/$$name node-dev \
+		ng serve --port 4200 --host 0.0.0.0 --disable-host-check
+
+react-dev: ## Lance le serveur de développement React
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/react/$$name node-dev \
+		PORT=3000 HOST=0.0.0.0 npm start
+
+vue-dev: ## Lance le serveur de développement Vue.js
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/vue/$$name node-dev \
+		npm run dev -- --port 5173 --host 0.0.0.0
 
 python-dev: ## Lance le serveur de développement Python
 	@read -p "Nom du projet: " name; \
@@ -333,36 +334,38 @@ wordpress-dev: ## Lance le serveur de développement Wordpress
 		composer install && \
 		wp server --host=0.0.0.0
 
-angular-dev: ## Lance le serveur de développement Angular
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/angular/$$name node-dev \
-		ng serve
-
-react-dev: ## Lance le serveur de développement React
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/react/$$name node-dev \
-		npm start
-
-vue-dev: ## Lance le serveur de développement Vue.js
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/vue/$$name node-dev \
-		npm run dev -- --host
-
 # Build production
 next-build: ## Build Next.js pour production
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/next/$$name node-dev \
-		npm run build
+	docker-compose run --rm -w /projects/next/$$name node-dev \
+		npm run build && npm run lint
 
 nuxt-build: ## Build Nuxt pour production
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/nuxt/$$name node-dev \
-		npm run build
+	docker-compose run --rm -w /projects/nuxt/$$name node-dev \
+		npm run build && npm run generate
 
 symfony-build: ## Build Symfony pour production
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/symfony/$$name php-dev \
-		composer install --no-dev --optimize-autoloader
+	docker-compose run --rm -w /projects/symfony/$$name php-dev \
+		composer install --no-dev --optimize-autoloader && \
+		composer dump-env prod && \
+		php bin/console cache:clear --env=prod
+
+angular-build: ## Build Angular pour production
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/angular/$$name node-dev \
+		ng build --configuration production --optimization
+
+react-build: ## Build React pour production
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/react/$$name node-dev \
+		npm run build && npm run lint
+
+vue-build: ## Build Vue.js pour production
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/vue/$$name node-dev \
+		npm run type-check && npm run build
 
 python-build: ## Build Python pour production
 	@read -p "Nom du projet: " name; \
@@ -375,74 +378,56 @@ wordpress-build: ## Build Wordpress pour production
 		composer install --no-dev --optimize-autoloader && \
 		composer update --no-dev
 
-angular-build: ## Build Angular pour production
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/angular/$$name node-dev \
-		ng build --configuration production
-
-react-build: ## Build React pour production
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/react/$$name node-dev \
-		npm run build
-
-vue-build: ## Build Vue.js pour production
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/vue/$$name node-dev \
-		npm run build
-
 # Installation dépendances
 next-install: ## Installe les dépendances Next.js
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/next/$$name node-dev \
-		npm install
+	docker-compose run --rm -w /projects/next/$$name node-dev \
+		npm install && npm audit fix
 
 nuxt-install: ## Installe les dépendances Nuxt
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/nuxt/$$name node-dev \
-		npm install
+	docker-compose run --rm -w /projects/nuxt/$$name node-dev \
+		npm install && npm audit fix
 
 symfony-install: ## Installe les dépendances Symfony
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/symfony/$$name php-dev \
-		composer install
-
-python-install: ## Installe les dépendances Python
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/python/$$name python-dev \
-		pip install -r requirements.txt
-
-wordpress-install: ## Installe les dépendances Wordpress
-	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/wordpress/$$name php-dev \
-		composer install
+	docker-compose run --rm -w /projects/symfony/$$name php-dev \
+		composer install && \
+		composer validate && \
+		php bin/console cache:clear
 
 angular-install: ## Installe les dépendances Angular
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/angular/$$name node-dev \
-		npm install
+	docker-compose run --rm -w /projects/angular/$$name node-dev \
+		npm install && npm audit fix
 
 react-install: ## Installe les dépendances React
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/react/$$name node-dev \
-		npm install
+	docker-compose run --rm -w /projects/react/$$name node-dev \
+		npm install && npm audit fix
 
 vue-install: ## Installe les dépendances Vue.js
 	@read -p "Nom du projet: " name; \
-	docker-compose run --force-rm -w /projects/vue/$$name node-dev \
-		npm install
+	docker-compose run --rm -w /projects/vue/$$name node-dev \
+		npm install && npm audit fix
+
+wordpress-install: ## Installe les dépendances Wordpress
+	@read -p "Nom du projet: " name; \
+	docker-compose run --rm -w /projects/wordpress/$$name php-dev \
+		composer install
 
 # Commandes utiles
 project-lint: ## Lance le linter
 	@read -p "Type (next/nuxt/symfony/angular/wordpress/react/vue): " type; \
 	read -p "Nom du projet: " name; \
 	if [ $$type = "next" ] || [ $$type = "nuxt" ]; then \
-		docker-compose run --force-rm -w /projects/$$type/$$name node-dev \
+		docker-compose run --rm -w /projects/$$type/$$name node-dev \
 			npm run lint; \
 	elif [ $$type = "wordpress" ]; then \
 		docker-compose run --force-rm -w /projects/$$type/$$name php-dev \
 			composer run-script lint; \
 	else \
-		docker-compose run --force-rm -w /projects/$$type/$$name php-dev \
+		docker-compose run --rm -w /projects/$$type/$$name php-dev \
 			php vendor/bin/phpcs; \
 	fi
 
