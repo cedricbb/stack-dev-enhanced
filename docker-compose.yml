@@ -68,17 +68,17 @@ services:
   code-server:
     image: codercom/code-server:latest
     container_name: code-server
-    restart: unless-stopped
+    user: "1000:1000"  # Ajout de l'utilisateur explicite
     environment:
       - PASSWORD=${CODE_SERVER_PASSWORD:-changeme}
     volumes:
       - ./projects:/home/coder/project
-      - ./config/code-server:/home/coder/.config
+      - ./config/code-server:/home/coder/.config:rw
     networks:
       - frontend
     labels:
       - traefik.enable=true
-      - traefik.http.routers.code.rule=Host(`code.${DOMAIN_NAME}`)
+      - traefik.http.routers.code.rule=Host(`code.cedricbillard-dev.fr`)
       - traefik.http.routers.code.entrypoints=websecure
       - traefik.http.routers.code.tls.certresolver=letsencrypt
       - traefik.http.services.code.loadbalancer.server.port=8080
@@ -205,10 +205,10 @@ services:
   docs:
     container_name: docs
     build:
-      context: ./docs
+      context: .
       dockerfile: Dockerfile
     volumes:
-      - ./docs:/docs
+      - ./:/docs
     deploy:
       resources:
         limits:
