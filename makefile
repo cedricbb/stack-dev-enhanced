@@ -329,7 +329,8 @@ react-dev: ## Lance le serveur de développement React
 
 vue-dev: ## Lance le serveur de développement Vue.js
 	@read -p "Nom du projet: " name; \
-	VUE_PROJECT=$$name docker-compose run --rm -w /projects/vue/$$name --service-name vue-dev-$$name vue-dev \
+	export VUE_PROJECT=$$name && \
+	docker-compose run --rm -w /projects/vue/$$name vue-dev \
 		npm run dev
 
 python-dev: ## Lance le serveur de développement Python

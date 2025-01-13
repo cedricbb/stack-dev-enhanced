@@ -103,16 +103,25 @@ services:
       - backend
   
   vue-dev:
-    extends:
-      service: node-dev
+    build:
+      context: ./docker/dev/node
+      dockerfile: Dockerfile
+    volumes:
+      - ./projects:/projects
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - VUE_PROJECT=${VUE_PROJECT:-default}
+    networks:
+      - frontend
+      - backend
     labels:
       - traefik.enable=true
       - traefik.http.routers.vue-dev.rule=Host(`${VUE_PROJECT}.vue.cedricbillard-dev.fr`)
       - traefik.http.services.vue-dev.loadbalancer.server.port=5173
       - traefik.http.routers.vue-dev.entrypoints=websecure
       - traefik.http.routers.vue-dev.tls.certresolver=letsencrypt
-    environment:
-      - VUE_PROJECT=${VUE_PROJECT}
 
   php-dev:
     build:
