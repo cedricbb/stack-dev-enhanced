@@ -326,11 +326,10 @@ react-dev: ## Lance le serveur de développement React
 	@read -p "Nom du projet: " name; \
 	docker-compose run --rm -w /projects/react/$$name node-dev \
 		PORT=3000 HOST=0.0.0.0 npm start
-
 vue-dev: ## Lance le serveur de développement Vue.js
 	@read -p "Nom du projet: " name; \
 	docker-compose run --rm -w /projects/vue/$$name node-dev \
-		npm run dev -- --port 5173 --host 0.0.0.0
+		sh -c 'if [ ! -d "node_modules" ]; then npm install; fi && npm run dev -- --port 5173 --host 0.0.0.0'
 
 python-dev: ## Lance le serveur de développement Python
 	@read -p "Nom du projet: " name; \
