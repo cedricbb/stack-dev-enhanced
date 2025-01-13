@@ -292,18 +292,18 @@ react-create: ## Crée un nouveau projet React
 		--template typescript; \
 	echo "✅ Projet React '$$name' créé"
 
-vue-create: ## Crée un nouveau projet Vue.js
+vue-create:
 	@read -p "Nom du projet: " name; \
-	mkdir -p ./projects/vue/$$name; \
-	docker-compose run --force-rm -w /projects/vue/$$name node-dev \
-		npx create-vue@latest . -- \
+	mkdir -p ./projects/vue/$$name && \
+	docker-compose run --rm -w /projects/vue/$$name node-dev \
+		npx create-vue@latest . \
 		--typescript \
 		--router \
 		--pinia \
 		--vitest \
 		--cypress \
 		--eslint \
-		--prettier; \
+		--prettier && \
 	echo "✅ Projet Vue.js '$$name' créé"
 
 # Développement
