@@ -68,7 +68,7 @@ services:
   code-server:
     image: codercom/code-server:latest
     container_name: code-server
-    user: "1000:1000"  # Ajout de l'utilisateur explicite
+    user: "1000:1000"
     environment:
       - PASSWORD=${CODE_SERVER_PASSWORD:-changeme}
     volumes:
