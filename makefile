@@ -289,7 +289,7 @@ react-create: ## Crée un nouveau projet React
 	mkdir -p ./projects/react/$$name && \
 	docker-compose run --rm -w /projects/react/$$name node-dev \
 		npx create-react-app . \
-		--template typescript && \
+		--template typescript --legacy-peer-deps && \
 	echo "✅ Projet React '$$name' créé"
 	
 # Développement
@@ -404,7 +404,7 @@ angular-install: ## Installe les dépendances Angular
 react-install: ## Installe les dépendances React
 	@read -p "Nom du projet: " name; \
 	docker-compose run --rm -w /projects/react/$$name node-dev \
-		npm install && npm audit fix
+		npm install --legacy-peer-deps && npm audit fix
 
 vue-install: ## Installe les dépendances Vue.js
 	@read -p "Nom du projet: " name; \
