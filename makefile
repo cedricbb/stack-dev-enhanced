@@ -298,7 +298,7 @@ vue-create: ## Crée un nouveau projet Vue.js
 	@read -p "Nom du projet: " name; \
 	mkdir -p ./projects/vue/$$name && \
 	docker-compose run --rm -w /projects/vue/$$name node-dev \
-		npx @vue/cli create . && \
+		npm create vue@latest . && \
 	echo "✅ Projet Vue.js '$$name' créé"
 
 # Développement
@@ -326,10 +326,11 @@ react-dev: ## Lance le serveur de développement React
 	@read -p "Nom du projet: " name; \
 	docker-compose run --rm -w /projects/react/$$name node-dev \
 		PORT=3000 HOST=0.0.0.0 npm start
+
 vue-dev: ## Lance le serveur de développement Vue.js
 	@read -p "Nom du projet: " name; \
 	docker-compose run --rm -w /projects/vue/$$name node-dev \
-		sh -c 'if [ ! -d "node_modules" ]; then npm install; fi && npm run dev -- --port 5173 --host 0.0.0.0'
+		npm run dev
 
 python-dev: ## Lance le serveur de développement Python
 	@read -p "Nom du projet: " name; \
@@ -416,8 +417,7 @@ react-install: ## Installe les dépendances React
 
 vue-install: ## Installe les dépendances Vue.js
 	@read -p "Nom du projet: " name; \
-	docker-compose run --rm -w /projects/vue/$$name node-dev npm install --legacy-peer-deps && \
-	docker-compose run --rm -w /projects/vue/$$name node-dev npm audit fix
+	docker-compose run --rm -w /projects/vue/$$name node-dev npm install
 
 wordpress-install: ## Installe les dépendances Wordpress
 	@read -p "Nom du projet: " name; \
