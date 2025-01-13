@@ -410,8 +410,8 @@ react-install: ## Installe les dépendances React
 
 vue-install: ## Installe les dépendances Vue.js
 	@read -p "Nom du projet: " name; \
-	docker-compose run --rm -w /projects/vue/$$name node-dev \
-		npm install && npm audit fix
+	docker-compose run --rm -w /projects/vue/$$name node-dev npm install --legacy-peer-deps && \
+	docker-compose run --rm -w /projects/vue/$$name node-dev npm audit fix
 
 wordpress-install: ## Installe les dépendances Wordpress
 	@read -p "Nom du projet: " name; \
