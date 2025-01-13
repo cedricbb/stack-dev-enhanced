@@ -294,6 +294,13 @@ react-create: ## Crée un nouveau projet React
 		npm install --legacy-peer-deps' && \
 	echo "✅ Projet React '$$name' créé"
 
+vue-create: ## Crée un nouveau projet Vue.js
+	@read -p "Nom du projet: " name; \
+	mkdir -p ./projects/vue/$$name && \
+	docker-compose run --rm -w /projects/vue/$$name node-dev \
+		npx @vue/cli create . && \
+	echo "✅ Projet Vue.js '$$name' créé"
+
 # Développement
 next-dev: ## Lance le serveur de développement Next.js
 	@read -p "Nom du projet: " name; \
