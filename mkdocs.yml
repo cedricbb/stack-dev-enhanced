@@ -44,9 +44,6 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
 
 plugins:
   - search
@@ -54,33 +51,33 @@ plugins:
       minify_html: true
 
 nav:
-  - Accueil: index.md
+  - Accueil: docs/index.md
   - Guide de Démarrage:
-    - Installation: getting-started/installation.md
-    - Configuration: getting-started/configuration.md
+    - Installation: docs/getting-started/installation.md
+    - Configuration: docs/getting-started/configuration.md
   - Services:
     - Bases de données:
-      - MariaDB: services/databases/mariadb.md
-      - Redis: services/databases/redis.md
-      - Adminer: services/databases/adminer.md
+      - MariaDB: docs/services/databases/mariadb.md
+      - Redis: docs/services/databases/redis.md
+      - Adminer: docs/services/databases/adminer.md
     - Monitoring:
-      - Portainer: services/monitoring/portainer.md
-      - Netdata: services/monitoring/netdata.md
-      - Monitoring: services/monitoring/monitoring.md
+      - Portainer: docs/services/monitoring/portainer.md
+      - Netdata: docs/services/monitoring/netdata.md
+      - Monitoring: docs/services/monitoring/monitoring.md
     - Proxy:
-      - Traefik: services/proxy/traefik.md
+      - Traefik: docs/services/proxy/traefik.md
   - Sécurité:
-    - Accès à Distance: security/remote-access.md
-    - Mesures de Sécurité: security/security-measures.md
+    - Accès à Distance: docs/security/remote-access.md
+    - Mesures de Sécurité: docs/security/security-measures.md
   - Administration:
-    - Gestion: admin/managment.md
-    - Maintenance: admin/maintenance.md
+    - Gestion: docs/admin/managment.md
+    - Maintenance: docs/admin/maintenance.md
   - Développement:
-    - Bonnes Pratiques: development/best-practices.md
-    - Performance: development/performance.md
+    - Bonnes Pratiques: docs/development/best-practices.md
+    - Performance: docs/development/performance.md
   - Troubleshooting:
-    - Problèmes Courants: troubleshooting/common-issues.md
-    - Performances: troubleshooting/performance.md
+    - Problèmes Courants: docs/troubleshooting/common-issues.md
+    - Performances: docs/troubleshooting/performance.md
 
 extra:
   social:
